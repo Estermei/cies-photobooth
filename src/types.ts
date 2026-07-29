@@ -31,3 +31,4 @@ export interface Session {
   duration?: number;
   photos_count?: number;
 }
+

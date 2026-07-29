@@ -2,6 +2,8 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import { createRequire } from "module";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { firestore } from "./firebase";
 
 function getNativeRequire() {
   try {
@@ -101,6 +103,48 @@ class InMemoryDb {
 
   constructor() {
     this.loadFromDisk();
+    this.loadFromFirestore();
+  }
+
+  private async loadFromFirestore() {
+    try {
+      const storeRef = doc(firestore, "photobooth_store", "main_data");
+      const snap = await getDoc(storeRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.packages) && data.packages.length > 0) this.packages = data.packages;
+        if (Array.isArray(data.frames)) this.frames = data.frames;
+        if (Array.isArray(data.stickers)) this.stickers = data.stickers;
+        if (Array.isArray(data.sessions)) this.sessions = data.sessions;
+        if (typeof data.nextPkgId === "number") this.nextPkgId = data.nextPkgId;
+        if (typeof data.nextFrameId === "number") this.nextFrameId = data.nextFrameId;
+        if (typeof data.nextStickerId === "number") this.nextStickerId = data.nextStickerId;
+        this.deduplicate();
+      } else {
+        await this.syncToFirestore();
+      }
+    } catch (e) {
+      console.warn("Failed to load store from Firestore:", e);
+    }
+  }
+
+  private async syncToFirestore() {
+    try {
+      this.deduplicate();
+      const storeRef = doc(firestore, "photobooth_store", "main_data");
+      await setDoc(storeRef, {
+        packages: this.packages,
+        frames: this.frames,
+        stickers: this.stickers,
+        sessions: this.sessions,
+        nextPkgId: this.nextPkgId,
+        nextFrameId: this.nextFrameId,
+        nextStickerId: this.nextStickerId,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      console.warn("Failed to sync store to Firestore:", e);
+    }
   }
 
   private loadFromDisk() {
@@ -158,6 +202,7 @@ class InMemoryDb {
     } catch (e) {
       console.warn("Failed to save store to disk:", e);
     }
+    this.syncToFirestore();
   }
 
   exec(_sql: string) {
