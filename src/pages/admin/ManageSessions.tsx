@@ -124,15 +124,9 @@ const ManageSessions: React.FC = () => {
                   {formatPrice(session.price || 0)}
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-center whitespace-nowrap">
-                  {session.status === 'pending' ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      <Clock size={12} /> Menunggu Approval
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      <CheckCircle size={12} /> Disetujui
-                    </span>
-                  )}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <CheckCircle size={12} /> Disetujui Otomatis
+                  </span>
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-center whitespace-nowrap">
                   <div className="flex justify-center gap-1.5 sm:gap-2">

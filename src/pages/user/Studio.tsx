@@ -47,7 +47,9 @@ const Studio: React.FC = () => {
         console.warn("Error checking session API:", error);
       }
 
-      if (!sessionData) {
+      if (sessionData) {
+        sessionData.status = 'active';
+      } else {
         sessionData = {
           id: sessionId || 'cies-session',
           package_id: 1,
@@ -59,29 +61,16 @@ const Studio: React.FC = () => {
       }
 
       setSession(sessionData);
-      
-      if (sessionData && sessionData.status === 'active') {
-        startCamera();
-        if (sessionData.duration) {
-          setTimeLeft(sessionData.duration * 60);
-        } else {
-          setTimeLeft(300);
-        }
+      startCamera();
+      if (sessionData.duration) {
+        setTimeLeft(sessionData.duration * 60);
+      } else {
+        setTimeLeft(300);
       }
     };
 
     checkSession();
-
-    // Cek persetujuan secara berkala jika status pending
-    let pollInterval: any;
-    if (session?.status === 'pending') {
-      pollInterval = setInterval(checkSession, 2000);
-    }
-
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-    };
-  }, [sessionId, session?.status]);
+  }, [sessionId]);
 
   // Hitung mundur pewaktu sesi
   useEffect(() => {
@@ -295,50 +284,38 @@ const Studio: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           <div className="relative max-w-2xl mx-auto w-full bg-white/5 rounded-3xl p-3 sm:p-4 border border-white/5 shadow-2xl">
             <div className="relative aspect-[4/3] bg-black rounded-2xl overflow-hidden border border-white/10">
-              {session.status === 'pending' ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a] p-12 text-center">
-                  <div className="w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin mb-8"></div>
-                  <h3 className="text-3xl font-bold mb-4">Menunggu Konfirmasi</h3>
-                  <p className="opacity-60 max-w-md">
-                    Bukti pembayaran Anda sedang diverifikasi oleh admin. Halaman ini akan otomatis terbuka setelah disetujui.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    playsInline 
-                    className={`w-full h-full object-cover ${isMirror ? 'scale-x-[-1]' : ''}`}
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                className={`w-full h-full object-cover ${isMirror ? 'scale-x-[-1]' : ''}`}
+              />
+              
+              {/* Flash Overlay */}
+              <AnimatePresence>
+                {isCapturing && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-white z-30"
                   />
-                  
-                  {/* Flash Overlay */}
-                  <AnimatePresence>
-                    {isCapturing && (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-white z-30"
-                      />
-                    )}
-                  </AnimatePresence>
+                )}
+              </AnimatePresence>
 
-                  {/* Countdown Overlay */}
-                  <AnimatePresence>
-                    {countdown !== null && (
-                      <motion.div 
-                        initial={{ scale: 2, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.5, opacity: 0 }}
-                        className="absolute inset-0 flex items-center justify-center z-40"
-                      >
-                        <span className="text-8xl sm:text-[12rem] font-black text-white drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">{countdown}</span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </>
-              )}
+              {/* Countdown Overlay */}
+              <AnimatePresence>
+                {countdown !== null && (
+                  <motion.div 
+                    initial={{ scale: 2, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    className="absolute inset-0 flex items-center justify-center z-40"
+                  >
+                    <span className="text-8xl sm:text-[12rem] font-black text-white drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">{countdown}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -374,7 +351,7 @@ const Studio: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full max-w-xl">
               <button
                 onClick={startAutoCapture}
-                disabled={session.status !== 'active' || isAutoCapturing || timeLeft <= 0}
+                disabled={isAutoCapturing || timeLeft <= 0}
                 className="flex-1 px-5 py-3.5 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-primary/20 text-xs sm:text-sm whitespace-nowrap min-h-[3.25rem]"
               >
                 <Camera size={18} />

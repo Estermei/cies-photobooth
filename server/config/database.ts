@@ -342,7 +342,7 @@ class InMemoryDb {
             package_id: params[1],
             user_name: params[2] || null,
             created_at: new Date().toISOString(),
-            status: 'pending',
+            status: 'active',
             payment_proof_url: null
           });
           res = { changes: 1, lastInsertRowid: 1 };
@@ -351,7 +351,7 @@ class InMemoryDb {
           const sess = self.sessions.find(s => s.id === sessId);
           if (sess) {
             sess.payment_proof_url = params[0];
-            sess.status = 'pending';
+            sess.status = 'active';
           }
           res = { changes: sess ? 1 : 0, lastInsertRowid: 1 };
         } else if (cleanSql.includes('UPDATE sessions SET status =')) {
@@ -426,7 +426,7 @@ export function setupSchemaAndSeed() {
           id TEXT PRIMARY KEY,
           package_id INTEGER,
           user_name TEXT,
-          status TEXT DEFAULT 'pending',
+          status TEXT DEFAULT 'active',
           payment_proof_url TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (package_id) REFERENCES packages(id)
