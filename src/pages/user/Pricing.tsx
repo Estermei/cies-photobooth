@@ -6,7 +6,7 @@ import { Package } from '../../types';
 
 const defaultPackages: Package[] = [
   { id: 1, name: 'Photobooth Kolase A (3 Foto)', price: 1500, photos_count: 3, duration: 1, description: '1 Photo Strip' },
-  { id: 2, name: 'Photobooth Kolase B (4 Foto)', price: 2000, photos_count: 4, duration: 2, description: '1 Photo Strip' },
+  { id: 2, name: 'Photobooth Kolase B (4 Foto)', price: 2500, photos_count: 4, duration: 2, description: '1 Photo Strip' },
   { id: 3, name: 'Photobooth Kolase C (6 Foto)', price: 3500, photos_count: 6, duration: 3, description: '1 Photo Strip' },
   { id: 4, name: 'Photobooth Kolase D (8 Foto)', price: 4500, photos_count: 8, duration: 4, description: '1 Photo Strip' }
 ];
