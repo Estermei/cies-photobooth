@@ -4,14 +4,19 @@ import path from "path";
 import { db } from "../config/database.js";
 
 export const adminLogin = (req: Request, res: Response) => {
-  const { username, password } = req.body;
-  const expectedUsername = process.env.ADMIN_USERNAME || "ciesadmin";
-  const expectedPassword = process.env.ADMIN_PASSWORD || "ci3s0413";
+  try {
+    const { username, password } = req.body || {};
+    const expectedUsername = process.env.ADMIN_USERNAME || "ciesadmin";
+    const expectedPassword = process.env.ADMIN_PASSWORD || "ci3s0413";
 
-  if (username === expectedUsername && password === expectedPassword) {
-    return res.json({ success: true, message: "Login berhasil" });
-  } else {
-    return res.status(401).json({ success: false, error: "Username atau password salah" });
+    if (username === expectedUsername && password === expectedPassword) {
+      return res.json({ success: true, message: "Login berhasil" });
+    } else {
+      return res.status(401).json({ success: false, error: "Username atau password salah" });
+    }
+  } catch (err: any) {
+    console.error("Admin login error:", err);
+    return res.status(500).json({ success: false, error: "Terjadi kesalahan server saat login" });
   }
 };
 
