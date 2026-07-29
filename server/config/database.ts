@@ -91,6 +91,47 @@ class InMemoryDb {
   private nextFrameId = 1;
   private nextStickerId = 1;
 
+  private storePath = path.join(os.tmpdir(), "photobooth_store.json");
+
+  constructor() {
+    this.loadFromDisk();
+  }
+
+  private loadFromDisk() {
+    try {
+      if (fs.existsSync(this.storePath)) {
+        const raw = fs.readFileSync(this.storePath, "utf-8");
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.packages) && data.packages.length > 0) this.packages = data.packages;
+        if (Array.isArray(data.frames)) this.frames = data.frames;
+        if (Array.isArray(data.stickers)) this.stickers = data.stickers;
+        if (Array.isArray(data.sessions)) this.sessions = data.sessions;
+        if (typeof data.nextPkgId === "number") this.nextPkgId = data.nextPkgId;
+        if (typeof data.nextFrameId === "number") this.nextFrameId = data.nextFrameId;
+        if (typeof data.nextStickerId === "number") this.nextStickerId = data.nextStickerId;
+      }
+    } catch (e) {
+      console.warn("Failed to load store from disk:", e);
+    }
+  }
+
+  private saveToDisk() {
+    try {
+      const data = {
+        packages: this.packages,
+        frames: this.frames,
+        stickers: this.stickers,
+        sessions: this.sessions,
+        nextPkgId: this.nextPkgId,
+        nextFrameId: this.nextFrameId,
+        nextStickerId: this.nextStickerId
+      };
+      fs.writeFileSync(this.storePath, JSON.stringify(data), "utf-8");
+    } catch (e) {
+      console.warn("Failed to save store to disk:", e);
+    }
+  }
+
   exec(_sql: string) {
     return this;
   }
@@ -101,6 +142,7 @@ class InMemoryDb {
 
     return {
       get(...params: any[]) {
+        self.loadFromDisk();
         if (cleanSql.includes('PRAGMA')) return { ok: 1 };
         if (cleanSql.includes('FROM packages WHERE name =')) {
           const pkg = self.packages.find(p => p.name === params[0]);
@@ -143,6 +185,7 @@ class InMemoryDb {
       },
 
       all(..._params: any[]) {
+        self.loadFromDisk();
         if (cleanSql.includes('PRAGMA table_info')) return [{ name: 'user_name' }];
         if (cleanSql.includes('FROM packages')) return [...self.packages];
         if (cleanSql.includes('FROM frames')) return [...self.frames];
@@ -161,6 +204,8 @@ class InMemoryDb {
       },
 
       run(...params: any[]) {
+        self.loadFromDisk();
+        let res = { changes: 1, lastInsertRowid: 1 };
         if (cleanSql.includes('INSERT INTO packages')) {
           const id = self.nextPkgId++;
           self.packages.push({
@@ -171,9 +216,8 @@ class InMemoryDb {
             photos_count: params[3],
             description: params[4]
           });
-          return { lastInsertRowid: id, changes: 1 };
-        }
-        if (cleanSql.includes('UPDATE packages SET')) {
+          res = { lastInsertRowid: id, changes: 1 };
+        } else if (cleanSql.includes('UPDATE packages SET')) {
           const id = params[5];
           const pkg = self.packages.find(p => p.id == id);
           if (pkg) {
@@ -183,14 +227,12 @@ class InMemoryDb {
             pkg.photos_count = params[3];
             pkg.description = params[4];
           }
-          return { changes: pkg ? 1 : 0 };
-        }
-        if (cleanSql.includes('DELETE FROM packages WHERE id =')) {
+          res = { changes: pkg ? 1 : 0, lastInsertRowid: id };
+        } else if (cleanSql.includes('DELETE FROM packages WHERE id =')) {
           const before = self.packages.length;
           self.packages = self.packages.filter(p => p.id != params[0]);
-          return { changes: before - self.packages.length };
-        }
-        if (cleanSql.includes('INSERT INTO frames')) {
+          res = { changes: before - self.packages.length, lastInsertRowid: 0 };
+        } else if (cleanSql.includes('INSERT INTO frames')) {
           const id = self.nextFrameId++;
           self.frames.push({
             id,
@@ -198,24 +240,20 @@ class InMemoryDb {
             image_url: params[1],
             photos_count: params[2] || 4
           });
-          return { lastInsertRowid: id, changes: 1 };
-        }
-        if (cleanSql.includes('DELETE FROM frames WHERE id =')) {
+          res = { lastInsertRowid: id, changes: 1 };
+        } else if (cleanSql.includes('DELETE FROM frames WHERE id =')) {
           const before = self.frames.length;
           self.frames = self.frames.filter(f => f.id != params[0]);
-          return { changes: before - self.frames.length };
-        }
-        if (cleanSql.includes('INSERT INTO stickers')) {
+          res = { changes: before - self.frames.length, lastInsertRowid: 0 };
+        } else if (cleanSql.includes('INSERT INTO stickers')) {
           const id = self.nextStickerId++;
           self.stickers.push({ id, name: params[0], image_url: params[1] });
-          return { lastInsertRowid: id, changes: 1 };
-        }
-        if (cleanSql.includes('DELETE FROM stickers WHERE id =')) {
+          res = { lastInsertRowid: id, changes: 1 };
+        } else if (cleanSql.includes('DELETE FROM stickers WHERE id =')) {
           const before = self.stickers.length;
           self.stickers = self.stickers.filter(s => s.id != params[0]);
-          return { changes: before - self.stickers.length };
-        }
-        if (cleanSql.includes('INSERT INTO sessions')) {
+          res = { changes: before - self.stickers.length, lastInsertRowid: 0 };
+        } else if (cleanSql.includes('INSERT INTO sessions')) {
           self.sessions.push({
             id: params[0],
             package_id: params[1],
@@ -224,29 +262,27 @@ class InMemoryDb {
             status: 'pending',
             payment_proof_url: null
           });
-          return { changes: 1 };
-        }
-        if (cleanSql.includes('UPDATE sessions SET payment_proof_url =')) {
+          res = { changes: 1, lastInsertRowid: 1 };
+        } else if (cleanSql.includes('UPDATE sessions SET payment_proof_url =')) {
           const sess = self.sessions.find(s => s.id === params[1]);
           if (sess) {
             sess.payment_proof_url = params[0];
             sess.status = 'active';
           }
-          return { changes: sess ? 1 : 0 };
-        }
-        if (cleanSql.includes('UPDATE sessions SET status =')) {
+          res = { changes: sess ? 1 : 0, lastInsertRowid: 1 };
+        } else if (cleanSql.includes('UPDATE sessions SET status =')) {
           const sess = self.sessions.find(s => s.id === params[0]);
           if (sess) {
             sess.status = 'active';
           }
-          return { changes: sess ? 1 : 0 };
-        }
-        if (cleanSql.includes('DELETE FROM sessions WHERE id =')) {
+          res = { changes: sess ? 1 : 0, lastInsertRowid: 1 };
+        } else if (cleanSql.includes('DELETE FROM sessions WHERE id =')) {
           const before = self.sessions.length;
           self.sessions = self.sessions.filter(s => s.id !== params[0]);
-          return { changes: before - self.sessions.length };
+          res = { changes: before - self.sessions.length, lastInsertRowid: 0 };
         }
-        return { changes: 1 };
+        self.saveToDisk();
+        return res;
       }
     };
   }

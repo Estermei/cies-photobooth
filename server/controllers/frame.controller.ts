@@ -18,11 +18,18 @@ export const createFrame = (req: Request, res: Response) => {
     const frameName = (name && name.trim()) ? name : req.file.originalname.replace(/\.[^/.]+$/, "");
 
     const filename = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-0._-]/g, "_")}`;
-    fs.writeFileSync(path.join(framesDir, filename), req.file.buffer);
-    const imageUrl = `/uploads/frames/${filename}`;
+    try {
+      if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir, { recursive: true });
+      fs.writeFileSync(path.join(framesDir, filename), req.file.buffer);
+    } catch (e) {
+      console.warn("Could not write frame to disk, fallback to data URL:", e);
+    }
 
-    const info = db.prepare("INSERT INTO frames (name, image_url, photos_count) VALUES (?, ?, ?)").run(frameName, imageUrl, photos_count || 4);
-    res.json({ id: info.lastInsertRowid, imageUrl });
+    const mime = req.file.mimetype || "image/png";
+    const imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
+
+    const info = db.prepare("INSERT INTO frames (name, image_url, photos_count) VALUES (?, ?, ?)").run(frameName, imageUrl, photos_count ? parseInt(photos_count, 10) : 4);
+    res.json({ id: info.lastInsertRowid, imageUrl, name: frameName, photos_count: photos_count ? parseInt(photos_count, 10) : 4 });
   } catch (err: any) {
     console.error("Upload frame error:", err);
     res.status(500).json({ error: "Gagal menyimpan frame." });
