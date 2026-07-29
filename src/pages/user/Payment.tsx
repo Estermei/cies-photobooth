@@ -5,10 +5,10 @@ import { motion } from 'motion/react';
 import { Package } from '../../types';
 
 const defaultPackages: Package[] = [
-  { id: 1, name: 'Photobooth Kolase A (3 Foto)', price: 1500, photos_count: 3, duration: 1, description: '1 Photo Strip' },
-  { id: 2, name: 'Photobooth Kolase B (4 Foto)', price: 2500, photos_count: 4, duration: 2, description: '1 Photo Strip' },
-  { id: 3, name: 'Photobooth Kolase C (6 Foto)', price: 3500, photos_count: 6, duration: 3, description: '1 Photo Strip' },
-  { id: 4, name: 'Photobooth Kolase D (8 Foto)', price: 4500, photos_count: 8, duration: 4, description: '1 Photo Strip' }
+  { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, photos_count: 3, duration: 5, description: 'Format strip klasik 3 foto' },
+  { id: 2, name: 'Standard Strip (4 Foto)', price: 2500, photos_count: 4, duration: 5, description: 'Format strip populer 4 foto' },
+  { id: 3, name: 'Grid Double (6 Foto)', price: 3500, photos_count: 6, duration: 10, description: 'Format grid 6 foto seru' },
+  { id: 4, name: 'Unlimited Pass', price: 4500, photos_count: 8, duration: 15, description: 'Format penuh 8 foto lengkap' }
 ];
 
 const Payment: React.FC = () => {
@@ -79,7 +79,7 @@ const Payment: React.FC = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            package_id: packageId
+            package_id: Number(packageId) || 1
           })
         });
         
@@ -110,7 +110,7 @@ const Payment: React.FC = () => {
       setProcessing(false);
       const successToast = document.createElement('div');
       successToast.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-8 py-4 rounded-2xl font-black shadow-2xl z-[100] animate-bounce";
-      successToast.innerText = "Pembayaran Berhasil! Membuka Studio...";
+      successToast.innerText = "Bukti Pembayaran Terkirim! Membuka Studio...";
       document.body.appendChild(successToast);
 
       setTimeout(() => {

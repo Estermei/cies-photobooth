@@ -74,7 +74,9 @@ const ManageSessions: React.FC = () => {
   };
 
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'Baru Saja';
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Baru Saja';
     return date.toLocaleDateString('id-ID', {
       day: '2-digit',
       month: 'short',
@@ -105,6 +107,7 @@ const ManageSessions: React.FC = () => {
               <th className="px-4 sm:px-8 py-4 sm:py-6">Tanggal</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6">Paket</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6">Jumlah</th>
+              <th className="px-4 sm:px-8 py-4 sm:py-6 text-center">Status</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6 text-center">Aksi</th>
             </tr>
           </thead>
@@ -115,10 +118,21 @@ const ManageSessions: React.FC = () => {
                   {formatDate(session.created_at)}
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-bold text-white whitespace-nowrap">
-                  {session.package_name}
+                  {session.package_name || 'Paket Photobooth'}
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-black text-primary whitespace-nowrap">
-                  {formatPrice(session.price)}
+                  {formatPrice(session.price || 0)}
+                </td>
+                <td className="px-4 sm:px-8 py-4 sm:py-6 text-center whitespace-nowrap">
+                  {session.status === 'pending' ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <Clock size={12} /> Menunggu Approval
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <CheckCircle size={12} /> Disetujui
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-center whitespace-nowrap">
                   <div className="flex justify-center gap-1.5 sm:gap-2">

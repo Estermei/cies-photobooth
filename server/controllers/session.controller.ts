@@ -23,7 +23,8 @@ export const adminLogin = (req: Request, res: Response) => {
 export const createSession = (req: Request, res: Response) => {
   const { package_id, user_name } = req.body;
   const sessionId = Math.random().toString(36).substring(2, 15);
-  db.prepare("INSERT INTO sessions (id, package_id, user_name) VALUES (?, ?, ?)").run(sessionId, package_id, user_name || null);
+  const pkgId = package_id ? Number(package_id) : 1;
+  db.prepare("INSERT INTO sessions (id, package_id, user_name) VALUES (?, ?, ?)").run(sessionId, pkgId, user_name || null);
   res.json({ sessionId });
 };
 
@@ -52,7 +53,7 @@ export const uploadPaymentProof = (req: Request, res: Response) => {
     return res.status(400).json({ error: "File gambar bukti transfer tidak ditemukan." });
   }
   const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
-  db.prepare("UPDATE sessions SET payment_proof_url = ?, status = 'active' WHERE id = ?").run(base64Image, req.params.id);
+  db.prepare("UPDATE sessions SET payment_proof_url = ?, status = 'pending' WHERE id = ?").run(base64Image, req.params.id);
   res.json({ success: true, imageUrl: base64Image });
 };
 

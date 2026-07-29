@@ -18,15 +18,15 @@ export const createSticker = (req: Request, res: Response) => {
     const stickerName = (name && name.trim()) ? name : req.file.originalname.replace(/\.[^/.]+$/, "");
 
     const filename = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-0._-]/g, "_")}`;
+    let imageUrl = `/uploads/stickers/${filename}`;
     try {
       if (!fs.existsSync(stickersDir)) fs.mkdirSync(stickersDir, { recursive: true });
       fs.writeFileSync(path.join(stickersDir, filename), req.file.buffer);
     } catch (e) {
       console.warn("Could not write sticker to disk, fallback to data URL:", e);
+      const mime = req.file.mimetype || "image/png";
+      imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
     }
-
-    const mime = req.file.mimetype || "image/png";
-    const imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
 
     const info = db.prepare("INSERT INTO stickers (name, image_url) VALUES (?, ?)").run(stickerName, imageUrl);
     res.json({ id: info.lastInsertRowid, imageUrl, name: stickerName });
