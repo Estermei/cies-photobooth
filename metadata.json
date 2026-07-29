@@ -1,0 +1,8 @@
+{
+  "name": "Cies Photobooth",
+  "description": "A digital photobooth application with admin management for packages, frames, and stickers.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
