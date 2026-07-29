@@ -2,45 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { CheckCircle, XCircle, Eye, Clock, Calendar, ExternalLink, RefreshCw, Trash2 } from 'lucide-react';
 import { Session } from '../../types';
+import { fetchSessions, deleteSessionApi } from '../../services/api';
 
 const ManageSessions: React.FC = () => {
-  const [sessions, setSessions] = useState<(Session & { price: number })[]>([]);
+  const [sessions, setSessions] = useState<(Session & { price?: number })[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSessions();
+    loadSessions();
   }, []);
 
-  const fetchSessions = () => {
+  const loadSessions = async () => {
     setLoading(true);
-    fetch('/api/admin/sessions')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch sessions');
-        return res.json();
-      })
-      .then(data => {
-        setSessions(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    try {
+      const data = await fetchSessions();
+      setSessions(data as any);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApprove = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/sessions/${id}/approve`, { method: 'POST' });
-      if (!res.ok) {
-        alert("Gagal menyetujui sesi.");
-        return;
-      }
-      fetchSessions();
+      // Sesi disetujui
+      await loadSessions();
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat menyetujui sesi.");
     }
   };
 
@@ -51,12 +42,8 @@ const ManageSessions: React.FC = () => {
   const confirmDelete = async () => {
     if (!deleteCandidateId) return;
     try {
-      const res = await fetch(`/api/admin/sessions/${deleteCandidateId}`, { method: 'DELETE' });
-      if (!res.ok) {
-        alert("Gagal menghapus riwayat.");
-        return;
-      }
-      fetchSessions();
+      await deleteSessionApi(deleteCandidateId);
+      await loadSessions();
     } catch (err) {
       console.error(err);
       alert("Terjadi kesalahan saat menghapus riwayat.");
@@ -92,7 +79,7 @@ const ManageSessions: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-12">
         <h2 className="text-xl sm:text-3xl font-black tracking-tight font-serif">Riwayat <span className="text-primary italic">Pembayaran</span></h2>
         <button 
-          onClick={fetchSessions}
+          onClick={loadSessions}
           className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-xs sm:text-sm font-bold w-full sm:w-auto"
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />

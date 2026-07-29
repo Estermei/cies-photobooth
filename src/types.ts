@@ -28,6 +28,7 @@ export interface Session {
   user_name?: string;
   created_at: string;
   package_name?: string;
+  price?: number;
   duration?: number;
   photos_count?: number;
 }

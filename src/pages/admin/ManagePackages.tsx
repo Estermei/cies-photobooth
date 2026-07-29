@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
-import { Plus, Trash2, Edit2, X, Save, RefreshCw, Package as PackageIcon } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Save, RefreshCw } from 'lucide-react';
 import { Package } from '../../types';
+import { fetchPackages, savePackageApi, deletePackageApi } from '../../services/api';
 
 const defaultPackages: Package[] = [
   { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, photos_count: 3, duration: 5, description: 'Format strip klasik 3 foto' },
@@ -14,7 +15,7 @@ const ManagePackages: React.FC = () => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [deleteCandidateId, setDeleteCandidateId] = useState<number | null>(null);
+  const [deleteCandidateId, setDeleteCandidateId] = useState<number | string | null>(null);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -25,51 +26,41 @@ const ManagePackages: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchPackages();
+    loadPackages();
   }, []);
 
-  const fetchPackages = () => {
+  const loadPackages = async () => {
     setLoading(true);
-    fetch('/api/packages')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch packages');
-        return res.json();
-      })
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setPackages(data);
-        } else {
-          setPackages(defaultPackages);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
+    try {
+      const data = await fetchPackages();
+      if (Array.isArray(data) && data.length > 0) {
+        setPackages(data);
+      } else {
         setPackages(defaultPackages);
-        setLoading(false);
-      });
+      }
+    } catch (err) {
+      console.error(err);
+      setPackages(defaultPackages);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const url = editingPackage ? `/api/packages/${editingPackage.id}` : '/api/packages';
-    const method = editingPackage ? 'PUT' : 'POST';
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-
-    if (!res.ok) {
+    try {
+      await savePackageApi({
+        ...(editingPackage ? { id: editingPackage.id } : {}),
+        ...formData
+      });
+      setIsModalOpen(false);
+      setEditingPackage(null);
+      setFormData({ name: '', price: 0, duration: 0, photos_count: 0, description: '' });
+      await loadPackages();
+    } catch (err) {
+      console.error(err);
       alert("Gagal menyimpan paket.");
-      return;
     }
-
-    setIsModalOpen(false);
-    setEditingPackage(null);
-    setFormData({ name: '', price: 0, duration: 0, photos_count: 0, description: '' });
-    fetchPackages();
   };
 
   const handleEdit = (pkg: Package) => {
@@ -84,19 +75,15 @@ const ManagePackages: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: number | string) => {
     setDeleteCandidateId(id);
   };
 
   const confirmDelete = async () => {
     if (!deleteCandidateId) return;
     try {
-      const res = await fetch(`/api/packages/${deleteCandidateId}`, { method: 'DELETE' });
-      if (!res.ok) {
-        alert("Gagal menghapus paket.");
-        return;
-      }
-      fetchPackages();
+      await deletePackageApi(deleteCandidateId);
+      await loadPackages();
     } catch (err) {
       console.error(err);
       alert("Terjadi kesalahan saat menghapus paket.");
@@ -119,7 +106,7 @@ const ManagePackages: React.FC = () => {
         <h2 className="text-xl sm:text-3xl font-black tracking-tight font-serif">Kelola <span className="text-primary italic">Paket</span></h2>
         <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
           <button 
-            onClick={fetchPackages}
+            onClick={loadPackages}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-xs sm:text-sm font-bold"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />

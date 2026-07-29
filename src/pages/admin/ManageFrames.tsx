@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { Plus, Trash2, X, Save, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { Frame } from '../../types';
-import { compressImage } from '../../utils/imageCompressor';
+import { fetchFrames, uploadFrameApi, deleteFrameApi } from '../../services/api';
 
 const ManageFrames: React.FC = () => {
   const [frames, setFrames] = useState<Frame[]>([]);
@@ -12,27 +12,22 @@ const ManageFrames: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
-  const [deleteCandidateId, setDeleteCandidateId] = useState<number | null>(null);
+  const [deleteCandidateId, setDeleteCandidateId] = useState<number | string | null>(null);
 
   useEffect(() => {
-    fetchFrames();
+    loadFrames();
   }, []);
 
-  const fetchFrames = () => {
+  const loadFrames = async () => {
     setLoading(true);
-    fetch('/api/frames')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch frames');
-        return res.json();
-      })
-      .then(data => {
-        setFrames(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    try {
+      const data = await fetchFrames();
+      setFrames(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,48 +44,13 @@ const ManageFrames: React.FC = () => {
 
     setSaving(true);
     try {
-      const compressedFile = await compressImage(formData.image, 1000, 0.8);
       const frameName = formData.image.name.replace(/\.[^/.]+$/, "") || 'Frame';
-
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(compressedFile);
-      });
-      const base64 = await base64Promise;
-
-      let res = await fetch('/api/frames', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: frameName,
-          photos_count: formData.photos_count,
-          image_base64: base64
-        })
-      });
-
-      if (!res.ok) {
-        const data = new FormData();
-        data.append('name', frameName);
-        data.append('photos_count', formData.photos_count.toString());
-        data.append('image', compressedFile);
-
-        res = await fetch('/api/frames', {
-          method: 'POST',
-          body: data
-        });
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Gagal mengunggah frame.");
-      }
+      await uploadFrameApi(frameName, formData.photos_count, formData.image);
 
       setIsModalOpen(false);
       setFormData({ photos_count: 4, image: null });
       setPreview(null);
-      fetchFrames();
+      await loadFrames();
     } catch (err: any) {
       console.error(err);
       alert(err.message || "Terjadi kesalahan saat menyimpan frame.");
@@ -99,19 +59,15 @@ const ManageFrames: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number | string) => {
     setDeleteCandidateId(id);
   };
 
   const confirmDelete = async () => {
     if (!deleteCandidateId) return;
     try {
-      const res = await fetch(`/api/frames/${deleteCandidateId}`, { method: 'DELETE' });
-      if (!res.ok) {
-        alert("Gagal menghapus frame.");
-        return;
-      }
-      fetchFrames();
+      await deleteFrameApi(deleteCandidateId);
+      await loadFrames();
     } catch (err) {
       console.error(err);
       alert("Terjadi kesalahan saat menghapus frame.");
@@ -126,7 +82,7 @@ const ManageFrames: React.FC = () => {
         <h2 className="text-xl sm:text-3xl font-black tracking-tight font-serif">Kelola <span className="text-primary italic">Frame</span></h2>
         <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
           <button 
-            onClick={fetchFrames}
+            onClick={loadFrames}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-xs sm:text-sm font-bold"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />

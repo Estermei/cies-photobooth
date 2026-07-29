@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Clock, Download, Upload, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Package } from '../../types';
+import { fetchPackages, createSessionApi, uploadPaymentProofApi } from '../../services/api';
 
 const defaultPackages: Package[] = [
   { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, photos_count: 3, duration: 5, description: 'Format strip klasik 3 foto' },
@@ -22,13 +23,9 @@ const Payment: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(600); // 10 menit dalam detik
 
   useEffect(() => {
-    fetch('/api/packages')
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch packages");
-        return res.json();
-      })
+    fetchPackages()
       .then(data => {
-        const found = data.find((p: Package) => p.id === Number(packageId));
+        const found = data.find((p: Package) => Number(p.id) === Number(packageId));
         setPkg(found || defaultPackages.find(p => p.id === Number(packageId)) || defaultPackages[0]);
         setLoading(false);
       })
@@ -71,39 +68,13 @@ const Payment: React.FC = () => {
     setProcessing(true);
     
     try {
-      let sessionId = `cies_${Date.now().toString(36)}`;
-      
-      try {
-        // 1. Buat Sesi
-        const sessionRes = await fetch('/api/sessions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            package_id: Number(packageId) || 1
-          })
-        });
-        
-        if (sessionRes.ok) {
-          const contentType = sessionRes.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const sessionData = await sessionRes.json();
-            if (sessionData.sessionId) {
-              sessionId = sessionData.sessionId;
-            }
-          }
-        }
+      // 1. Buat Sesi di Firebase / API
+      const sessionResult = await createSessionApi(Number(packageId) || 1, 'Pelanggan');
+      const sessionId = sessionResult.sessionId;
 
-        // 2. Unggah Bukti Pembayaran jika endpoint API tersedia
-        if (sessionId) {
-          const formData = new FormData();
-          formData.append('image', proof);
-          await fetch(`/api/sessions/${sessionId}/proof`, {
-            method: 'POST',
-            body: formData
-          }).catch(err => console.warn("Proof upload silent fallback:", err));
-        }
-      } catch (err) {
-        console.warn("API session creation error, proceeding with local session fallback:", err);
+      // 2. Unggah Bukti Pembayaran ke Firebase Storage / API
+      if (sessionId && proof) {
+        await uploadPaymentProofApi(sessionId, proof);
       }
 
       // Brief success state before navigating

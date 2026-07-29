@@ -5,6 +5,7 @@ import { Download, Layout, Sticker as StickerIcon, Check, ArrowLeft, Instagram, 
 import useImage from 'use-image';
 import Konva from 'konva';
 import { Frame, Sticker, Session } from '../../types';
+import { fetchSessionById, fetchFrames, fetchStickers } from '../../services/api';
 import { get as idbGet } from 'idb-keyval';
 
 const PhotoItem = ({ 
@@ -378,13 +379,12 @@ const Editor: React.FC = () => {
       setIsLoading(true);
       try {
         let currentSession: Session | null = null;
-        try {
-          const sessionRes = await fetch(`/api/sessions/${sessionId}`);
-          if (sessionRes.ok) {
-            currentSession = await sessionRes.json();
+        if (sessionId) {
+          try {
+            currentSession = await fetchSessionById(sessionId);
+          } catch (err) {
+            console.warn("Failed fetching session:", err);
           }
-        } catch (err) {
-          console.warn("Failed fetching session:", err);
         }
 
         if (!currentSession) {
@@ -398,28 +398,18 @@ const Editor: React.FC = () => {
         setSession(currentSession);
 
         try {
-          const framesRes = await fetch('/api/frames');
-          if (framesRes.ok) {
-            const data = await framesRes.json();
-            setFrames(Array.isArray(data) ? data : []);
-          } else {
-            setFrames([]);
-          }
+          const framesData = await fetchFrames();
+          setFrames(Array.isArray(framesData) ? framesData : []);
         } catch (err) {
-          console.warn("Gagal mengambil daftar frame dari API:", err);
+          console.warn("Gagal mengambil daftar frame:", err);
           setFrames([]);
         }
 
         try {
-          const stickersRes = await fetch('/api/stickers');
-          if (stickersRes.ok) {
-            const data = await stickersRes.json();
-            setStickers(Array.isArray(data) ? data : []);
-          } else {
-            setStickers([]);
-          }
+          const stickersData = await fetchStickers();
+          setStickers(Array.isArray(stickersData) ? stickersData : []);
         } catch (err) {
-          console.warn("Gagal mengambil daftar stiker dari API:", err);
+          console.warn("Gagal mengambil daftar stiker:", err);
           setStickers([]);
         }
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Camera, RefreshCw, CheckCircle2, Timer, Monitor, Sparkles, Info, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Session } from '../../types';
+import { fetchSessionById } from '../../services/api';
 import { set as idbSet } from 'idb-keyval';
 
 const Studio: React.FC = () => {
@@ -38,13 +39,12 @@ const Studio: React.FC = () => {
   useEffect(() => {
     const checkSession = async () => {
       let sessionData: Session | null = null;
-      try {
-        const res = await fetch(`/api/sessions/${sessionId}`);
-        if (res.ok) {
-          sessionData = await res.json();
+      if (sessionId) {
+        try {
+          sessionData = await fetchSessionById(sessionId);
+        } catch (error) {
+          console.warn("Error checking session API:", error);
         }
-      } catch (error) {
-        console.warn("Error checking session API:", error);
       }
 
       if (sessionData) {

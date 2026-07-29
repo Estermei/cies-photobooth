@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Camera } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Package } from '../../types';
+import { fetchPackages } from '../../services/api';
 
 const defaultPackages: Package[] = [
   { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, photos_count: 3, duration: 5, description: 'Format strip klasik 3 foto' },
@@ -16,11 +17,7 @@ const Pricing: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/packages')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch packages');
-        return res.json();
-      })
+    fetchPackages()
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setPackages(data);
