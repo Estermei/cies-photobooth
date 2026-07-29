@@ -1,12 +1,56 @@
 {
-  "projectId": "notional-outpost-6ds98",
-  "appId": "1:1044689608099:web:6ebba65dd3597e99d48e16",
-  "apiKey": "AIzaSyCi3Q0QlKvhgzSNabBy18tNoEEqNvMM9rA",
-  "authDomain": "notional-outpost-6ds98.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-ciesphotobooth-5baf7672-bdef-4915-b891-53fbece9db74",
-  "storageBucket": "notional-outpost-6ds98.firebasestorage.app",
-  "messagingSenderId": "1044689608099",
-  "measurementId": "",
-  "oAuthClientId": "1044689608099-74gmcgb2rlmovqc8gcm5m0p6cl8vecch.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "entities": {
+    "packages": {
+      "title": "Packages",
+      "description": "Photobooth packages",
+      "properties": {
+        "id": { "type": "number", "description": "Package ID" },
+        "name": { "type": "string", "description": "Package name" },
+        "price": { "type": "number", "description": "Price in IDR" },
+        "duration": { "type": "number", "description": "Duration in minutes" },
+        "photos_count": { "type": "number", "description": "Number of photos" },
+        "description": { "type": "string", "description": "Package description" }
+      },
+      "required": ["name", "price", "duration", "photos_count"]
+    },
+    "frames": {
+      "title": "Frames",
+      "description": "Photobooth frames",
+      "properties": {
+        "id": { "type": "number", "description": "Frame ID" },
+        "name": { "type": "string", "description": "Frame name" },
+        "image": { "type": "string", "description": "Base64 or URL" },
+        "photos_count": { "type": "number", "description": "Photos count" },
+        "created_at": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["name", "image"]
+    },
+    "stickers": {
+      "title": "Stickers",
+      "description": "Photobooth stickers",
+      "properties": {
+        "id": { "type": "number", "description": "Sticker ID" },
+        "name": { "type": "string", "description": "Sticker name" },
+        "image": { "type": "string", "description": "Base64 or URL" },
+        "created_at": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["name", "image"]
+    },
+    "sessions": {
+      "title": "Sessions",
+      "description": "Photobooth payment/photo sessions",
+      "properties": {
+        "id": { "type": "string", "description": "Session ID" },
+        "session_code": { "type": "string", "description": "Unique session code" },
+        "package_id": { "type": "number", "description": "Package ID" },
+        "package_name": { "type": "string", "description": "Package name" },
+        "price": { "type": "number", "description": "Price paid" },
+        "photos_count": { "type": "number", "description": "Number of photos" },
+        "payment_status": { "type": "string", "description": "pending / completed / cancelled" },
+        "payment_method": { "type": "string", "description": "qris / cash" },
+        "created_at": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["session_code", "package_id", "payment_status"]
+    }
+  }
 }
