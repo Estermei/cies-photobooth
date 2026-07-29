@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { Plus, Trash2, X, Upload, Sticker as StickerIcon, RefreshCw } from 'lucide-react';
 import { Sticker } from '../../types';
+import { compressImage } from '../../utils/imageCompressor';
 
 const ManageStickers: React.FC = () => {
   const [stickers, setStickers] = useState<Sticker[]>([]);
@@ -10,6 +11,8 @@ const ManageStickers: React.FC = () => {
   const [deleteCandidateId, setDeleteCandidateId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: '', image: null as File | null });
   const [preview, setPreview] = useState<string | null>(null);
+
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchStickers();
@@ -42,26 +45,35 @@ const ManageStickers: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.image) return;
+    if (!formData.image || saving) return;
 
-    const data = new FormData();
-    data.append('name', formData.name);
-    data.append('image', formData.image);
+    setSaving(true);
+    try {
+      const compressedFile = await compressImage(formData.image, 1000, 0.85);
+      const data = new FormData();
+      data.append('name', formData.name || formData.image.name.replace(/\.[^/.]+$/, ""));
+      data.append('image', compressedFile);
 
-    const res = await fetch('/api/stickers', {
-      method: 'POST',
-      body: data
-    });
+      const res = await fetch('/api/stickers', {
+        method: 'POST',
+        body: data
+      });
 
-    if (!res.ok) {
-      alert("Gagal mengunggah stiker.");
-      return;
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Gagal mengunggah stiker.");
+      }
+
+      setIsModalOpen(false);
+      setFormData({ name: '', image: null });
+      setPreview(null);
+      fetchStickers();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Gagal mengunggah stiker.");
+    } finally {
+      setSaving(false);
     }
-
-    setIsModalOpen(false);
-    setFormData({ name: '', image: null });
-    setPreview(null);
-    fetchStickers();
   };
 
   const handleDelete = (id: number) => {

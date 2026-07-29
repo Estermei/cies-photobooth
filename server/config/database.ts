@@ -97,7 +97,7 @@ class InMemoryDb {
   private nextFrameId = 1;
   private nextStickerId = 1;
 
-  private storePath = path.join(uploadDir, "photobooth_store.json");
+  private storePath = path.join(os.tmpdir(), "photobooth_store.json");
 
   constructor() {
     this.loadFromDisk();
@@ -388,13 +388,6 @@ export function setupSchemaAndSeed() {
     } catch (e) {
       // Ignore
     }
-
-    try {
-      const checkOldSeed = db.prepare("SELECT COUNT(*) as count FROM packages WHERE name = 'Basic'").get() as { count: number };
-      if (checkOldSeed && checkOldSeed.count > 0) {
-        db.exec("DELETE FROM packages");
-      }
-    } catch (e) {}
 
     try {
       const packageCount = db.prepare("SELECT COUNT(*) as count FROM packages").get() as { count: number };

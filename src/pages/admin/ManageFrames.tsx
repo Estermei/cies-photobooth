@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { Plus, Trash2, X, Save, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { Frame } from '../../types';
+import { compressImage } from '../../utils/imageCompressor';
 
 const ManageFrames: React.FC = () => {
   const [frames, setFrames] = useState<Frame[]>([]);
@@ -48,10 +49,11 @@ const ManageFrames: React.FC = () => {
 
     setSaving(true);
     try {
+      const compressedFile = await compressImage(formData.image, 1200, 0.85);
       const data = new FormData();
       data.append('name', formData.image.name.replace(/\.[^/.]+$/, "") || 'Frame');
       data.append('photos_count', formData.photos_count.toString());
-      data.append('image', formData.image);
+      data.append('image', compressedFile);
 
       const res = await fetch('/api/frames', {
         method: 'POST',
