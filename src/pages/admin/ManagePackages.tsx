@@ -140,7 +140,7 @@ const ManagePackages: React.FC = () => {
       </div>
 
       <div className="bg-white/5 rounded-2xl sm:rounded-3xl border border-white/10 overflow-x-auto">
-        <table className="w-full text-left min-w-[500px]">
+        <table className="w-full text-left min-w-125">
           <thead>
             <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
               <th className="px-4 sm:px-8 py-4 sm:py-6">Nama</th>
@@ -153,7 +153,7 @@ const ManagePackages: React.FC = () => {
           </thead>
           <tbody className="divide-y divide-white/5">
             {packages.map(pkg => (
-              <tr key={pkg.id} className="hover:bg-white/[0.02] transition-colors group">
+              <tr key={pkg.id} className="hover:bg-white/2 transition-colors group">
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-bold text-white whitespace-nowrap">
                   {pkg.name}
                 </td>
@@ -195,7 +195,7 @@ const ManagePackages: React.FC = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-bg-dark/90 backdrop-blur-md z-[100] flex items-start justify-center p-4 md:p-8 overflow-y-auto">
+        <div className="fixed inset-0 bg-bg-dark/90 backdrop-blur-md z-100 flex items-start justify-center p-4 md:p-8 overflow-y-auto">
           <div className="relative max-w-lg w-full bg-white/5 border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-10 my-8">
             <div className="flex justify-between items-center mb-10">
               <h3 className="text-2xl font-black tracking-tight font-serif">
@@ -277,8 +277,8 @@ const ManagePackages: React.FC = () => {
       )}
       {/* Delete Confirmation Modal */}
       {deleteCandidateId !== null && (
-        <div className="fixed inset-0 bg-bg-dark/95 backdrop-blur-md z-[110] flex items-center justify-center p-4 animate-fade-in">
-          <div className="relative max-w-sm w-full bg-white/5 border border-white/10 rounded-[2rem] shadow-2xl p-6 md:p-8 space-y-6">
+        <div className="fixed inset-0 bg-bg-dark/95 backdrop-blur-md z-110 flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative max-w-sm w-full bg-white/5 border border-white/10 rounded-4xl shadow-2xl p-6 md:p-8 space-y-6">
             <div className="text-center space-y-2">
               <h3 className="text-xl font-bold text-white">Hapus Paket?</h3>
               <p className="text-sm text-slate-400">Apakah Anda yakin ingin menghapus paket ini? Tindakan ini tidak dapat dibatalkan.</p>

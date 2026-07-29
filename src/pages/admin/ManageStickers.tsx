@@ -51,49 +51,38 @@ const ManageStickers: React.FC = () => {
     try {
       const compressedFile = await compressImage(formData.image, 800, 0.8);
       const stickerName = formData.name || formData.image.name.replace(/\.[^/.]+$/, "") || 'Stiker';
-      let success = false;
 
-      // Percobaan 1: FormData
-      try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(compressedFile);
+      });
+      const base64 = await base64Promise;
+
+      let res = await fetch('/api/stickers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: stickerName,
+          image_base64: base64
+        })
+      });
+
+      if (!res.ok) {
         const data = new FormData();
         data.append('name', stickerName);
         data.append('image', compressedFile);
 
-        const res = await fetch('/api/stickers', {
+        res = await fetch('/api/stickers', {
           method: 'POST',
           body: data
         });
-
-        if (res.ok) {
-          success = true;
-        }
-      } catch (e) {
-        console.warn("FormData upload failed, trying base64 JSON fallback:", e);
       }
 
-      // Percobaan 2: Base64 JSON fallback
-      if (!success) {
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(compressedFile);
-        });
-        const base64 = await base64Promise;
-
-        const res = await fetch('/api/stickers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: stickerName,
-            image_base64: base64
-          })
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.error || "Gagal mengunggah stiker.");
-        }
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Gagal mengunggah stiker.");
       }
 
       setIsModalOpen(false);
@@ -179,7 +168,7 @@ const ManageStickers: React.FC = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-bg-dark/90 backdrop-blur-md z-[100] flex items-start justify-center p-4 md:p-8 overflow-y-auto">
+        <div className="fixed inset-0 bg-bg-dark/90 backdrop-blur-md z-100 flex items-start justify-center p-4 md:p-8 overflow-y-auto">
           <div className="relative max-w-lg w-full bg-white/5 border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-10 my-8">
             <div className="flex justify-between items-center mb-10">
               <h3 className="text-2xl font-black tracking-tight font-serif">Tambah <span className="text-primary italic">Stiker</span></h3>
@@ -238,8 +227,8 @@ const ManageStickers: React.FC = () => {
       )}
       {/* Delete Confirmation Modal */}
       {deleteCandidateId !== null && (
-        <div className="fixed inset-0 bg-bg-dark/95 backdrop-blur-md z-[110] flex items-center justify-center p-4 animate-fade-in">
-          <div className="relative max-w-sm w-full bg-white/5 border border-white/10 rounded-[2rem] shadow-2xl p-6 md:p-8 space-y-6">
+        <div className="fixed inset-0 bg-bg-dark/95 backdrop-blur-md z-110 flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative max-w-sm w-full bg-white/5 border border-white/10 rounded-4xl shadow-2xl p-6 md:p-8 space-y-6">
             <div className="text-center space-y-2">
               <h3 className="text-xl font-bold text-white">Hapus Stiker?</h3>
               <p className="text-sm text-slate-400">Apakah Anda yakin ingin menghapus stiker ini? Tindakan ini tidak dapat dibatalkan.</p>

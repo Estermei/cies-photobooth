@@ -51,51 +51,40 @@ const ManageFrames: React.FC = () => {
     try {
       const compressedFile = await compressImage(formData.image, 1000, 0.8);
       const frameName = formData.image.name.replace(/\.[^/.]+$/, "") || 'Frame';
-      let success = false;
 
-      // Percobaan 1: FormData
-      try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(compressedFile);
+      });
+      const base64 = await base64Promise;
+
+      let res = await fetch('/api/frames', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: frameName,
+          photos_count: formData.photos_count,
+          image_base64: base64
+        })
+      });
+
+      if (!res.ok) {
         const data = new FormData();
         data.append('name', frameName);
         data.append('photos_count', formData.photos_count.toString());
         data.append('image', compressedFile);
 
-        const res = await fetch('/api/frames', {
+        res = await fetch('/api/frames', {
           method: 'POST',
           body: data
         });
-
-        if (res.ok) {
-          success = true;
-        }
-      } catch (e) {
-        console.warn("FormData upload failed, trying base64 JSON fallback:", e);
       }
 
-      // Percobaan 2: Base64 JSON fallback (Sangat andal di Vercel Serverless)
-      if (!success) {
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(compressedFile);
-        });
-        const base64 = await base64Promise;
-
-        const res = await fetch('/api/frames', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: frameName,
-            photos_count: formData.photos_count,
-            image_base64: base64
-          })
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.error || "Gagal mengunggah frame.");
-        }
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Gagal mengunggah frame.");
       }
 
       setIsModalOpen(false);
@@ -156,7 +145,7 @@ const ManageFrames: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
         {frames.map(frame => (
           <div key={frame.id} className="bg-white/5 rounded-3xl border border-white/10 overflow-hidden group hover:border-primary/50 transition-all flex flex-col justify-between p-4">
-            <div className="aspect-[2/3] relative bg-black/20 rounded-2xl overflow-hidden mb-4 p-2">
+            <div className="aspect-2/3 relative bg-black/20 rounded-2xl overflow-hidden mb-4 p-2">
               <img src={frame.image_url} alt="Frame" className="w-full h-full object-contain" />
             </div>
             <button 
@@ -178,7 +167,7 @@ const ManageFrames: React.FC = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-bg-dark/90 backdrop-blur-md z-[100] flex items-start justify-center p-4 md:p-8 overflow-y-auto">
+        <div className="fixed inset-0 bg-bg-dark/90 backdrop-blur-md z-100 flex items-start justify-center p-4 md:p-8 overflow-y-auto">
           <div className="relative max-w-lg w-full bg-white/5 border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-10 my-8">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-2xl font-black tracking-tight font-serif">Tambah <span className="text-primary italic">Frame</span></h3>
@@ -193,7 +182,7 @@ const ManageFrames: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Upload File Gambar Frame (PNG Transparan)</label>
-                <div className="relative aspect-[2/3] bg-black/20 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
+                <div className="relative aspect-2/3 bg-black/20 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
                   {preview ? (
                     <img src={preview} alt="Preview" className="w-full h-full object-contain p-4" />
                   ) : (
@@ -231,8 +220,8 @@ const ManageFrames: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteCandidateId !== null && (
-        <div className="fixed inset-0 bg-bg-dark/95 backdrop-blur-md z-[110] flex items-center justify-center p-4 animate-fade-in">
-          <div className="relative max-w-sm w-full bg-white/5 border border-white/10 rounded-[2rem] shadow-2xl p-6 md:p-8 space-y-6">
+        <div className="fixed inset-0 bg-bg-dark/95 backdrop-blur-md z-110 flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative max-w-sm w-full bg-white/5 border border-white/10 rounded-4xl shadow-2xl p-6 md:p-8 space-y-6">
             <div className="text-center space-y-2">
               <h3 className="text-xl font-bold text-white">Hapus Frame?</h3>
               <p className="text-sm text-slate-400">Apakah Anda yakin ingin menghapus frame ini? Tindakan ini tidak dapat dibatalkan.</p>

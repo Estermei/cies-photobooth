@@ -1,7 +1,9 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { initializeFirestore } from "firebase/firestore";
+import { initializeFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import fs from "fs";
 import path from "path";
+
+export { doc, getDoc, setDoc };
 
 let config: any = {};
 try {

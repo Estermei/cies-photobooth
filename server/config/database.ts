@@ -2,8 +2,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import { createRequire } from "module";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { firestore } from "./firebase";
+import { firestore, doc, getDoc, setDoc } from "./firebase.js";
 
 function getNativeRequire() {
   try {
