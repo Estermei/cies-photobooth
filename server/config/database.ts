@@ -1,13 +1,19 @@
 import path from "path";
 import fs from "fs";
 import os from "os";
+import { createRequire } from "module";
+
 function getNativeRequire() {
-  if (typeof require !== "undefined") {
-    return require;
+  try {
+    return createRequire(import.meta.url);
+  } catch {
+    if (typeof require !== "undefined") {
+      return require;
+    }
+    return (_moduleName: string) => {
+      throw new Error("Require not supported in standard ESM without createRequire");
+    };
   }
-  return (_moduleName: string) => {
-    throw new Error("Require not supported in standard ESM without createRequire");
-  };
 }
 
 function getWritableDir(subDir: string) {
@@ -91,7 +97,7 @@ class InMemoryDb {
   private nextFrameId = 1;
   private nextStickerId = 1;
 
-  private storePath = path.join(os.tmpdir(), "photobooth_store.json");
+  private storePath = path.join(uploadDir, "photobooth_store.json");
 
   constructor() {
     this.loadFromDisk();

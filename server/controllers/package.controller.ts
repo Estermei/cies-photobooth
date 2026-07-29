@@ -10,15 +10,16 @@ export const createPackage = (req: Request, res: Response) => {
   const { name, price, duration, photos_count, description } = req.body;
   const info = db.prepare(
     "INSERT INTO packages (name, price, duration, photos_count, description) VALUES (?, ?, ?, ?, ?)"
-  ).run(name, price, duration, photos_count, description);
+  ).run(name, Number(price) || 0, Number(duration) || 5, Number(photos_count) || 4, description || "");
   res.json({ id: info.lastInsertRowid });
 };
 
 export const updatePackage = (req: Request, res: Response) => {
   const { name, price, duration, photos_count, description } = req.body;
+  const pkgId = Number(req.params.id) || req.params.id;
   db.prepare(
     "UPDATE packages SET name = ?, price = ?, duration = ?, photos_count = ?, description = ? WHERE id = ?"
-  ).run(name, price, duration, photos_count, description, req.params.id);
+  ).run(name, Number(price) || 0, Number(duration) || 5, Number(photos_count) || 4, description || "", pkgId);
   res.json({ success: true });
 };
 
