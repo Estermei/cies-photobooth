@@ -3,6 +3,13 @@ import { AdminLayout } from './Dashboard';
 import { Plus, Trash2, Edit2, X, Save, RefreshCw, Package as PackageIcon } from 'lucide-react';
 import { Package } from '../../types';
 
+const defaultPackages: Package[] = [
+  { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, photos_count: 3, duration: 5, description: 'Format strip klasik 3 foto' },
+  { id: 2, name: 'Standard Strip (4 Foto)', price: 2500, photos_count: 4, duration: 5, description: 'Format strip populer 4 foto' },
+  { id: 3, name: 'Grid Double (6 Foto)', price: 3500, photos_count: 6, duration: 10, description: 'Format grid 6 foto seru' },
+  { id: 4, name: 'Unlimited Pass', price: 4500, photos_count: 8, duration: 15, description: 'Format penuh 8 foto lengkap' }
+];
+
 const ManagePackages: React.FC = () => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,11 +36,16 @@ const ManagePackages: React.FC = () => {
         return res.json();
       })
       .then(data => {
-        setPackages(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setPackages(data);
+        } else {
+          setPackages(defaultPackages);
+        }
         setLoading(false);
       })
       .catch(err => {
         console.error(err);
+        setPackages(defaultPackages);
         setLoading(false);
       });
   };

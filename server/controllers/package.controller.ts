@@ -1,8 +1,18 @@
 import { Request, Response } from "express";
 import { db } from "../config/database.js";
 
+const defaultPackages = [
+  { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, duration: 5, photos_count: 3, description: 'Format strip klasik 3 foto' },
+  { id: 2, name: 'Standard Strip (4 Foto)', price: 2500, duration: 5, photos_count: 4, description: 'Format strip populer 4 foto' },
+  { id: 3, name: 'Grid Double (6 Foto)', price: 3500, duration: 10, photos_count: 6, description: 'Format grid 6 foto seru' },
+  { id: 4, name: 'Unlimited Pass', price: 4500, duration: 15, photos_count: 8, description: 'Format penuh 8 foto lengkap' }
+];
+
 export const getPackages = (req: Request, res: Response) => {
-  const packages = db.prepare("SELECT * FROM packages").all();
+  let packages = db.prepare("SELECT * FROM packages").all();
+  if (!packages || packages.length === 0) {
+    packages = defaultPackages;
+  }
   res.json(packages);
 };
 

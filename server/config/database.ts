@@ -260,7 +260,18 @@ class InMemoryDb {
       all(..._params: any[]) {
         self.loadFromDisk();
         if (cleanSql.includes('PRAGMA table_info')) return [{ name: 'user_name' }];
-        if (cleanSql.includes('FROM packages')) return [...self.packages];
+        if (cleanSql.includes('FROM packages')) {
+          if (!self.packages || self.packages.length === 0) {
+            self.packages = [
+              { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, duration: 5, photos_count: 3, description: 'Format strip klasik 3 foto' },
+              { id: 2, name: 'Standard Strip (4 Foto)', price: 2500, duration: 5, photos_count: 4, description: 'Format strip populer 4 foto' },
+              { id: 3, name: 'Grid Double (6 Foto)', price: 3500, duration: 10, photos_count: 6, description: 'Format grid 6 foto seru' },
+              { id: 4, name: 'Unlimited Pass', price: 4500, duration: 15, photos_count: 8, description: 'Format penuh 8 foto lengkap' }
+            ];
+            self.saveToDisk();
+          }
+          return [...self.packages];
+        }
         if (cleanSql.includes('FROM frames')) return [...self.frames];
         if (cleanSql.includes('FROM stickers')) return [...self.stickers];
         if (cleanSql.includes('FROM sessions')) {
