@@ -1,39 +1,91 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
+import os from "os";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+function getWritableDir(subDir: string) {
+  const primary = path.join(process.cwd(), "public", subDir);
+  try {
+    if (!fs.existsSync(primary)) {
+      fs.mkdirSync(primary, { recursive: true });
+    }
+    const testFile = path.join(primary, `.test-${Date.now()}`);
+    fs.writeFileSync(testFile, "test");
+    fs.unlinkSync(testFile);
+    return primary;
+  } catch {
+    const fallback = path.join(os.tmpdir(), "photobooth", subDir);
+    if (!fs.existsSync(fallback)) {
+      fs.mkdirSync(fallback, { recursive: true });
+    }
+    return fallback;
+  }
+}
 
-// Memastikan direktori unggahan tersedia
-export const uploadDir = path.join(process.cwd(), "public", "uploads");
+export const uploadDir = getWritableDir("uploads");
 export const framesDir = path.join(uploadDir, "frames");
 export const stickersDir = path.join(uploadDir, "stickers");
 export const proofsDir = path.join(uploadDir, "proofs");
 
 [uploadDir, framesDir, stickersDir, proofsDir].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (err) {
+    console.warn("Directory creation warning:", dir, err);
   }
 });
 
-function initDatabase() {
+function getDbPath() {
+  const rootDbPath = path.join(process.cwd(), "photobooth.db");
+  const tmpDbPath = path.join(os.tmpdir(), "photobooth.db");
+
+  if (process.env.VERCEL) {
+    if (fs.existsSync(rootDbPath) && !fs.existsSync(tmpDbPath)) {
+      try {
+        fs.copyFileSync(rootDbPath, tmpDbPath);
+      } catch (e) {
+        console.warn("Failed to copy root DB to tmp:", e);
+      }
+    }
+    return tmpDbPath;
+  }
+
   try {
-    const instance = new Database("photobooth.db");
+    const testFile = path.join(process.cwd(), `.dbtest-${Date.now()}`);
+    fs.writeFileSync(testFile, "test");
+    fs.unlinkSync(testFile);
+    return rootDbPath;
+  } catch {
+    if (fs.existsSync(rootDbPath) && !fs.existsSync(tmpDbPath)) {
+      try {
+        fs.copyFileSync(rootDbPath, tmpDbPath);
+      } catch (e) {
+        console.warn("Failed to copy root DB to tmp:", e);
+      }
+    }
+    return tmpDbPath;
+  }
+}
+
+function initDatabase() {
+  const dbPath = getDbPath();
+  try {
+    const instance = new Database(dbPath);
     instance.prepare("PRAGMA quick_check").get();
     return instance;
   } catch (err) {
-    console.warn("Database file corrupted or unreadable. Resetting database...", err);
+    console.warn("Database init warning. Retrying at", dbPath, err);
     try {
-      if (fs.existsSync("photobooth.db")) fs.unlinkSync("photobooth.db");
-      if (fs.existsSync("photobooth.db-journal")) fs.unlinkSync("photobooth.db-journal");
-      if (fs.existsSync("photobooth.db-wal")) fs.unlinkSync("photobooth.db-wal");
-      if (fs.existsSync("photobooth.db-shm")) fs.unlinkSync("photobooth.db-shm");
+      if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+      if (fs.existsSync(`${dbPath}-journal`)) fs.unlinkSync(`${dbPath}-journal`);
+      if (fs.existsSync(`${dbPath}-wal`)) fs.unlinkSync(`${dbPath}-wal`);
+      if (fs.existsSync(`${dbPath}-shm`)) fs.unlinkSync(`${dbPath}-shm`);
     } catch (e) {
       console.error("Failed to delete corrupted database file:", e);
     }
-    return new Database("photobooth.db");
+    return new Database(dbPath);
   }
 }
 
@@ -89,10 +141,10 @@ export function setupSchemaAndSeed() {
     const packageCount = db.prepare("SELECT COUNT(*) as count FROM packages").get() as { count: number };
     if (packageCount.count === 0) {
       const insertPackage = db.prepare("INSERT INTO packages (name, price, duration, photos_count, description) VALUES (?, ?, ?, ?, ?)");
-      insertPackage.run("Photobooth Kolase A", 1500, 1, 3, "1 Photo Strip");
-      insertPackage.run("Photobooth Kolase B", 2500, 2, 4, "1 Photo Strip");
-      insertPackage.run("Photobooth Kolase C", 3500, 3, 6, "1 Photo Strip");
-      insertPackage.run("Photobooth Kolase D", 4500, 4, 8, "1 Photo Strip");
+      insertPackage.run("Basic Strip (3 Foto)", 1500, 5, 3, "Format strip klasik 3 foto");
+      insertPackage.run("Standard Strip (4 Foto)", 2500, 5, 4, "Format strip populer 4 foto");
+      insertPackage.run("Grid Double (6 Foto)", 3500, 10, 6, "Format grid 6 foto seru");
+      insertPackage.run("Unlimited Pass", 4500, 15, 8, "Format penuh 8 foto lengkap");
     }
 
     db.prepare("DELETE FROM frames WHERE image_url LIKE '%.svg'").run();
@@ -102,7 +154,7 @@ export function setupSchemaAndSeed() {
     for (const f of allFrames) {
       if (f.image_url.startsWith("/uploads/")) {
         const relPath = f.image_url.replace(/^\/uploads\//, "");
-        const fullPath = path.join(process.cwd(), "public", "uploads", relPath);
+        const fullPath = path.join(uploadDir, relPath);
         if (!fs.existsSync(fullPath) || fs.statSync(fullPath).size === 0) {
           db.prepare("DELETE FROM frames WHERE id = ?").run(f.id);
         }
@@ -113,7 +165,7 @@ export function setupSchemaAndSeed() {
     for (const s of allStickers) {
       if (s.image_url.startsWith("/uploads/")) {
         const relPath = s.image_url.replace(/^\/uploads\//, "");
-        const fullPath = path.join(process.cwd(), "public", "uploads", relPath);
+        const fullPath = path.join(uploadDir, relPath);
         if (!fs.existsSync(fullPath) || fs.statSync(fullPath).size === 0) {
           db.prepare("DELETE FROM stickers WHERE id = ?").run(s.id);
         }
