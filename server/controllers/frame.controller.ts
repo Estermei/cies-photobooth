@@ -11,25 +11,33 @@ export const getFrames = (req: Request, res: Response) => {
 
 export const createFrame = (req: Request, res: Response) => {
   try {
-    if (!req.file) {
+    let imageUrl = "";
+    let frameName = "";
+    let photosCount = 4;
+
+    if (req.file) {
+      frameName = (req.body.name && req.body.name.trim()) ? req.body.name : req.file.originalname.replace(/\.[^/.]+$/, "");
+      photosCount = req.body.photos_count ? parseInt(req.body.photos_count, 10) : 4;
+      const filename = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-0._-]/g, "_")}`;
+      try {
+        if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir, { recursive: true });
+        fs.writeFileSync(path.join(framesDir, filename), req.file.buffer);
+        imageUrl = `/uploads/frames/${filename}`;
+      } catch (e) {
+        console.warn("Could not write frame to disk, fallback to data URL:", e);
+        const mime = req.file.mimetype || "image/png";
+        imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
+      }
+    } else if (req.body && (req.body.image_base64 || req.body.image_url)) {
+      frameName = (req.body.name && req.body.name.trim()) ? req.body.name : "Frame Baru";
+      photosCount = req.body.photos_count ? parseInt(req.body.photos_count, 10) : 4;
+      imageUrl = req.body.image_base64 || req.body.image_url;
+    } else {
       return res.status(400).json({ error: "File gambar frame tidak ditemukan." });
     }
-    const { name, photos_count } = req.body;
-    const frameName = (name && name.trim()) ? name : req.file.originalname.replace(/\.[^/.]+$/, "");
 
-    const filename = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-0._-]/g, "_")}`;
-    let imageUrl = `/uploads/frames/${filename}`;
-    try {
-      if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir, { recursive: true });
-      fs.writeFileSync(path.join(framesDir, filename), req.file.buffer);
-    } catch (e) {
-      console.warn("Could not write frame to disk, fallback to data URL:", e);
-      const mime = req.file.mimetype || "image/png";
-      imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
-    }
-
-    const info = db.prepare("INSERT INTO frames (name, image_url, photos_count) VALUES (?, ?, ?)").run(frameName, imageUrl, photos_count ? parseInt(photos_count, 10) : 4);
-    res.json({ id: info.lastInsertRowid, imageUrl, name: frameName, photos_count: photos_count ? parseInt(photos_count, 10) : 4 });
+    const info = db.prepare("INSERT INTO frames (name, image_url, photos_count) VALUES (?, ?, ?)").run(frameName, imageUrl, photosCount);
+    res.json({ id: info.lastInsertRowid, imageUrl, name: frameName, photos_count: photosCount });
   } catch (err: any) {
     console.error("Upload frame error:", err);
     res.status(500).json({ error: "Gagal menyimpan frame." });

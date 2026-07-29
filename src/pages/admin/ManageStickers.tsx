@@ -49,19 +49,51 @@ const ManageStickers: React.FC = () => {
 
     setSaving(true);
     try {
-      const compressedFile = await compressImage(formData.image, 1000, 0.85);
-      const data = new FormData();
-      data.append('name', formData.name || formData.image.name.replace(/\.[^/.]+$/, ""));
-      data.append('image', compressedFile);
+      const compressedFile = await compressImage(formData.image, 800, 0.8);
+      const stickerName = formData.name || formData.image.name.replace(/\.[^/.]+$/, "") || 'Stiker';
+      let success = false;
 
-      const res = await fetch('/api/stickers', {
-        method: 'POST',
-        body: data
-      });
+      // Percobaan 1: FormData
+      try {
+        const data = new FormData();
+        data.append('name', stickerName);
+        data.append('image', compressedFile);
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Gagal mengunggah stiker.");
+        const res = await fetch('/api/stickers', {
+          method: 'POST',
+          body: data
+        });
+
+        if (res.ok) {
+          success = true;
+        }
+      } catch (e) {
+        console.warn("FormData upload failed, trying base64 JSON fallback:", e);
+      }
+
+      // Percobaan 2: Base64 JSON fallback
+      if (!success) {
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(compressedFile);
+        });
+        const base64 = await base64Promise;
+
+        const res = await fetch('/api/stickers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: stickerName,
+            image_base64: base64
+          })
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || "Gagal mengunggah stiker.");
+        }
       }
 
       setIsModalOpen(false);

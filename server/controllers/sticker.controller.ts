@@ -11,21 +11,26 @@ export const getStickers = (req: Request, res: Response) => {
 
 export const createSticker = (req: Request, res: Response) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "File gambar stiker tidak ditemukan." });
-    }
-    const { name } = req.body;
-    const stickerName = (name && name.trim()) ? name : req.file.originalname.replace(/\.[^/.]+$/, "");
+    let imageUrl = "";
+    let stickerName = "";
 
-    const filename = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-0._-]/g, "_")}`;
-    let imageUrl = `/uploads/stickers/${filename}`;
-    try {
-      if (!fs.existsSync(stickersDir)) fs.mkdirSync(stickersDir, { recursive: true });
-      fs.writeFileSync(path.join(stickersDir, filename), req.file.buffer);
-    } catch (e) {
-      console.warn("Could not write sticker to disk, fallback to data URL:", e);
-      const mime = req.file.mimetype || "image/png";
-      imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
+    if (req.file) {
+      stickerName = (req.body.name && req.body.name.trim()) ? req.body.name : req.file.originalname.replace(/\.[^/.]+$/, "");
+      const filename = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-0._-]/g, "_")}`;
+      try {
+        if (!fs.existsSync(stickersDir)) fs.mkdirSync(stickersDir, { recursive: true });
+        fs.writeFileSync(path.join(stickersDir, filename), req.file.buffer);
+        imageUrl = `/uploads/stickers/${filename}`;
+      } catch (e) {
+        console.warn("Could not write sticker to disk, fallback to data URL:", e);
+        const mime = req.file.mimetype || "image/png";
+        imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
+      }
+    } else if (req.body && (req.body.image_base64 || req.body.image_url)) {
+      stickerName = (req.body.name && req.body.name.trim()) ? req.body.name : "Stiker Baru";
+      imageUrl = req.body.image_base64 || req.body.image_url;
+    } else {
+      return res.status(400).json({ error: "File gambar stiker tidak ditemukan." });
     }
 
     const info = db.prepare("INSERT INTO stickers (name, image_url) VALUES (?, ?)").run(stickerName, imageUrl);
