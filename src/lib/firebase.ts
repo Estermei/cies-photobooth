@@ -23,12 +23,12 @@ import { Package, Frame, Sticker, Session } from "../types";
 
 // Firebase Client Configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForFallback123456789",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAiOZ0F3Hpm383M4lmnFrRCdT50n19Jc6I",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "ciesphotobooth.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "ciesphotobooth",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "ciesphotobooth.appspot.com",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "ciesphotobooth.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "9387197908",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:9387197908:web:abcdef123456",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:9387197908:web:74350d83dee7f225ef0241",
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-FHRH0991H8"
 };
 
@@ -96,13 +96,57 @@ export async function getFramesFromFirestore(): Promise<Frame[]> {
   }
 }
 
+import { compressImage } from '../utils/imageCompressor';
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Helper function to handle upload with Storage, with automatic Base64 fallback for free Spark tier
+async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, timeoutMs = 8000): Promise<string> {
+  let file = fileToUpload;
+  
+  // Optimasi ukuran file jika di atas 500KB
+  if (file.size > 500 * 1024) {
+    try {
+      file = await compressImage(fileToUpload, 1800, 0.88);
+    } catch (e) {
+      console.warn("Auto compression skipped:", e);
+    }
+  }
+
+  try {
+    const uploadPromise = (async () => {
+      const snapshot = await uploadBytes(storageRef, file);
+      return await getDownloadURL(snapshot.ref);
+    })();
+
+    const timeoutPromise = new Promise<string>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("Storage timeout"));
+      }, timeoutMs);
+    });
+
+    return await Promise.race([uploadPromise, timeoutPromise]);
+  } catch (err) {
+    console.warn("Firebase Storage tidak aktif / butuh upgrade, mengalihkan ke penyimpanan Base64 Firestore:", err);
+    // Fallback otomatis ke Base64 (tersimpan aman di Firestore gratis tanpa kartu kredit)
+    const base64File = file.size > 400 * 1024 ? await compressImage(file, 1400, 0.82) : file;
+    return await fileToBase64(base64File);
+  }
+}
+
 export async function uploadFrameToFirebase(name: string, photosCount: number, file: File): Promise<Frame> {
   const fileExt = file.name.split('.').pop() || 'png';
   const fileName = `frames/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
   const storageRef = ref(storage, fileName);
 
-  await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
+  const downloadURL = await uploadToStorageWithTimeout(storageRef, file);
 
   const newId = Date.now();
   const frameData = {
@@ -153,8 +197,7 @@ export async function uploadStickerToFirebase(name: string, file: File): Promise
   const fileName = `stickers/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
   const storageRef = ref(storage, fileName);
 
-  await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
+  const downloadURL = await uploadToStorageWithTimeout(storageRef, file);
 
   const newId = Date.now();
   const stickerData = {
@@ -235,8 +278,7 @@ export async function uploadPaymentProofToFirebase(sessionId: string, file: File
   const fileName = `payments/${sessionId}_${Date.now()}.${fileExt}`;
   const storageRef = ref(storage, fileName);
 
-  await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
+  const downloadURL = await uploadToStorageWithTimeout(storageRef, file);
 
   const docRef = doc(db, "sessions", sessionId);
   await updateDoc(docRef, {
