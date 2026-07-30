@@ -21,29 +21,17 @@ import {
 } from "firebase/storage";
 import { Package, Frame, Sticker, Session } from "../types";
 
-interface ImportMetaEnv {
-  readonly VITE_FIREBASE_API_KEY?: string;
-  readonly VITE_FIREBASE_AUTH_DOMAIN?: string;
-  readonly VITE_FIREBASE_PROJECT_ID?: string;
-  readonly VITE_FIREBASE_STORAGE_BUCKET?: string;
-  readonly VITE_FIREBASE_MESSAGING_SENDER_ID?: string;
-  readonly VITE_FIREBASE_APP_ID?: string;
-  readonly VITE_FIREBASE_MEASUREMENT_ID?: string;
-}
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
+const env = (import.meta as ImportMeta).env;
 
-// Firebase Client Configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAiOZ0F3Hpm383M4lmnFrRCdT50n19Jc6I",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "ciesphotobooth.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "ciesphotobooth",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "ciesphotobooth.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "9387197908",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:9387197908:web:74350d83dee7f225ef0241",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-FHRH0991H8"
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.VITE_FIREBASE_APP_ID,
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize App singleton
