@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Package, Layout, Sticker, LogOut, BarChart3, Users, Clock, CreditCard, RefreshCw, Calendar, TrendingUp, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { fetchSessions as fetchSessionsFromApi } from '../../services/api';
 
 interface SessionWithPrice {
   id: string;
@@ -317,10 +318,9 @@ const Dashboard: React.FC = () => {
   const fetchSessions = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/sessions');
-      if (res.ok) {
-        const data = await res.json();
-        setSessions(data);
+      const data = await fetchSessionsFromApi();
+      if (Array.isArray(data)) {
+        setSessions(data as any);
       }
     } catch (error) {
       console.error('Error fetching sessions:', error);

@@ -111,11 +111,6 @@ const ManageSessions: React.FC = () => {
                   {formatPrice(session.price || 0)}
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-center whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <CheckCircle size={12} /> Disetujui Otomatis
-                  </span>
-                </td>
-                <td className="px-4 sm:px-8 py-4 sm:py-6 text-center whitespace-nowrap">
                   <div className="flex justify-center gap-1.5 sm:gap-2">
                     {session.payment_proof_url ? (
                       <button 

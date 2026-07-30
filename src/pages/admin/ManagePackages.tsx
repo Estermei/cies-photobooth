@@ -134,7 +134,6 @@ const ManagePackages: React.FC = () => {
               <th className="px-4 sm:px-8 py-4 sm:py-6">Harga</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6">Foto</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6">Durasi</th>
-              <th className="px-4 sm:px-8 py-4 sm:py-6">Status</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6 text-center">Aksi</th>
             </tr>
           </thead>

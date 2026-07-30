@@ -1,5 +1,5 @@
 export interface Package {
-  id: number;
+  id: number | string;
   name: string;
   price: number;
   duration: number;
@@ -8,14 +8,14 @@ export interface Package {
 }
 
 export interface Frame {
-  id: number;
+  id: number | string;
   name: string;
   image_url: string;
   photos_count?: number;
 }
 
 export interface Sticker {
-  id: number;
+  id: number | string;
   name: string;
   image_url: string;
 }

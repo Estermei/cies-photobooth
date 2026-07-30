@@ -86,10 +86,13 @@ export async function deletePackageFromFirestore(id: number | string) {
 export async function getFramesFromFirestore(): Promise<Frame[]> {
   try {
     const snap = await getDocs(collection(db, "frames"));
-    return snap.docs.map(docSnap => ({
-      id: isNaN(Number(docSnap.id)) ? docSnap.id : Number(docSnap.id),
-      ...docSnap.data()
-    })) as Frame[];
+    return snap.docs.map(docSnap => {
+      const data = docSnap.data();
+      return {
+        ...data,
+        id: docSnap.id
+      };
+    }) as unknown as Frame[];
   } catch (err) {
     console.warn("Firestore getFrames error:", err);
     return [];
@@ -98,46 +101,61 @@ export async function getFramesFromFirestore(): Promise<Frame[]> {
 
 import { compressImage } from '../utils/imageCompressor';
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
+// Helper function to convert file to lightweight Base64 preserving transparency
+async function compressAndConvertToBase64(file: File, maxDim = 1000): Promise<string> {
+  return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(reader.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
+        const mimeType = isPng ? 'image/png' : 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mimeType, 0.85);
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve(reader.result as string);
+      img.src = reader.result as string;
+    };
+    reader.onerror = () => resolve('');
     reader.readAsDataURL(file);
   });
 }
 
-// Helper function to handle upload with Storage, with automatic Base64 fallback for free Spark tier
-async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, timeoutMs = 8000): Promise<string> {
-  let file = fileToUpload;
-  
-  // Optimasi ukuran file jika di atas 500KB
-  if (file.size > 500 * 1024) {
-    try {
-      file = await compressImage(fileToUpload, 1800, 0.88);
-    } catch (e) {
-      console.warn("Auto compression skipped:", e);
-    }
-  }
-
+// Helper function to handle upload with Storage, with fast automatic Base64 fallback
+async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, timeoutMs = 1500): Promise<string> {
   try {
     const uploadPromise = (async () => {
-      const snapshot = await uploadBytes(storageRef, file);
+      const snapshot = await uploadBytes(storageRef, fileToUpload);
       return await getDownloadURL(snapshot.ref);
     })();
 
     const timeoutPromise = new Promise<string>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error("Storage timeout"));
-      }, timeoutMs);
+      setTimeout(() => reject(new Error("Storage timeout")), timeoutMs);
     });
 
     return await Promise.race([uploadPromise, timeoutPromise]);
   } catch (err) {
-    console.warn("Firebase Storage tidak aktif / butuh upgrade, mengalihkan ke penyimpanan Base64 Firestore:", err);
-    // Fallback otomatis ke Base64 (tersimpan aman di Firestore gratis tanpa kartu kredit)
-    const base64File = file.size > 400 * 1024 ? await compressImage(file, 1400, 0.82) : file;
-    return await fileToBase64(base64File);
+    console.warn("Firebase Storage fallback to Base64:", err);
+    return await compressAndConvertToBase64(fileToUpload, 1000);
   }
 }
 
@@ -163,29 +181,48 @@ export async function uploadFrameToFirebase(name: string, photosCount: number, f
 }
 
 export async function deleteFrameFromFirestore(id: number | string) {
-  const frameDocRef = doc(db, "frames", id.toString());
-  const snap = await getDoc(frameDocRef);
-  if (snap.exists()) {
-    const data = snap.data();
-    if (data.storagePath) {
-      try {
-        await deleteObject(ref(storage, data.storagePath));
-      } catch (e) {
-        console.warn("Storage item delete skipped:", e);
+  const docIdStr = id.toString();
+  try {
+    const frameDocRef = doc(db, "frames", docIdStr);
+    const snap = await getDoc(frameDocRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.storagePath) {
+        try { await deleteObject(ref(storage, data.storagePath)); } catch (e) {}
+      }
+      await deleteDoc(frameDocRef);
+      return;
+    }
+  } catch (e) {}
+
+  try {
+    const snap = await getDocs(collection(db, "frames"));
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data();
+      if (docSnap.id === docIdStr || data.id?.toString() === docIdStr || data.id === id) {
+        if (data.storagePath) {
+          try { await deleteObject(ref(storage, data.storagePath)); } catch (e) {}
+        }
+        await deleteDoc(docSnap.ref);
       }
     }
+  } catch (err) {
+    console.error("Failed to delete frame:", err);
+    throw err;
   }
-  await deleteDoc(frameDocRef);
 }
 
 // --- STICKERS ---
 export async function getStickersFromFirestore(): Promise<Sticker[]> {
   try {
     const snap = await getDocs(collection(db, "stickers"));
-    return snap.docs.map(docSnap => ({
-      id: isNaN(Number(docSnap.id)) ? docSnap.id : Number(docSnap.id),
-      ...docSnap.data()
-    })) as Sticker[];
+    return snap.docs.map(docSnap => {
+      const data = docSnap.data();
+      return {
+        ...data,
+        id: docSnap.id
+      };
+    }) as unknown as Sticker[];
   } catch (err) {
     console.warn("Firestore getStickers error:", err);
     return [];
@@ -209,23 +246,39 @@ export async function uploadStickerToFirebase(name: string, file: File): Promise
   };
 
   await setDoc(doc(db, "stickers", newId.toString()), stickerData);
-  return stickerData as Sticker;
+  return { ...stickerData, id: newId.toString() } as unknown as Sticker;
 }
 
 export async function deleteStickerFromFirestore(id: number | string) {
-  const stickerDocRef = doc(db, "stickers", id.toString());
-  const snap = await getDoc(stickerDocRef);
-  if (snap.exists()) {
-    const data = snap.data();
-    if (data.storagePath) {
-      try {
-        await deleteObject(ref(storage, data.storagePath));
-      } catch (e) {
-        console.warn("Storage sticker delete skipped:", e);
+  const docIdStr = id.toString();
+  try {
+    const stickerDocRef = doc(db, "stickers", docIdStr);
+    const snap = await getDoc(stickerDocRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.storagePath) {
+        try { await deleteObject(ref(storage, data.storagePath)); } catch (e) {}
+      }
+      await deleteDoc(stickerDocRef);
+      return;
+    }
+  } catch (e) {}
+
+  try {
+    const snap = await getDocs(collection(db, "stickers"));
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data();
+      if (docSnap.id === docIdStr || data.id?.toString() === docIdStr || data.id === id) {
+        if (data.storagePath) {
+          try { await deleteObject(ref(storage, data.storagePath)); } catch (e) {}
+        }
+        await deleteDoc(docSnap.ref);
       }
     }
+  } catch (err) {
+    console.error("Failed to delete sticker:", err);
+    throw err;
   }
-  await deleteDoc(stickerDocRef);
 }
 
 // --- SESSIONS ---
@@ -260,7 +313,7 @@ export async function createSessionInFirestore(packageId: number, userName: stri
 
   const sessionData: Session = {
     id: sessionId,
-    package_id: selectedPkg.id,
+    package_id: typeof selectedPkg.id === 'number' ? selectedPkg.id : Number(selectedPkg.id) || 1,
     package_name: selectedPkg.name,
     price: selectedPkg.price,
     duration: selectedPkg.duration,
