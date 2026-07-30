@@ -22,7 +22,6 @@ import {
 import { Package, Frame, Sticker, Session } from "../types";
 
 // Firebase Client Configuration
-// Firebase Client Configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAiOZ0F3Hpm383M4lmnFrRCdT50n19Jc6I",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "ciesphotobooth.firebaseapp.com",
@@ -58,10 +57,27 @@ export async function getPackagesFromFirestore(): Promise<Package[]> {
       }
       return defaultPackages;
     }
-    return snap.docs.map(docSnap => ({
+    const pkgs = snap.docs.map(docSnap => ({
       id: isNaN(Number(docSnap.id)) ? docSnap.id : Number(docSnap.id),
       ...docSnap.data()
     })) as Package[];
+
+    // Auto-update legacy package names to new names if old names are detected
+    let updated = false;
+    for (const pkg of pkgs) {
+      const def = defaultPackages.find(d => Number(d.id) === Number(pkg.id));
+      if (def && (pkg.name.includes('Strip') || pkg.name.includes('Grid') || pkg.name.includes('Unlimited'))) {
+        pkg.name = def.name;
+        pkg.duration = def.duration;
+        pkg.photos_count = def.photos_count;
+        pkg.price = def.price;
+        pkg.description = def.description;
+        await setDoc(doc(db, "packages", pkg.id.toString()), pkg, { merge: true });
+        updated = true;
+      }
+    }
+
+    return pkgs;
   } catch (err) {
     console.warn("Firestore getPackages error, returning defaults:", err);
     return defaultPackages;
@@ -319,7 +335,8 @@ export async function createSessionInFirestore(packageId: number, userName: stri
     package_id: typeof selectedPkg.id === 'number' ? selectedPkg.id : Number(selectedPkg.id) || 1,
     package_name: selectedPkg.name,
     price: selectedPkg.price,
-    duration: selectedPkg.duration,
+    duration: selectedPkg.duration || 1,
+    photos_count: selectedPkg.photos_count || 3,
     user_name: userName || 'User',
     status: 'active', // Langsung aktif tanpa konfirmasi admin sesuai permintaan
     created_at: new Date().toISOString()

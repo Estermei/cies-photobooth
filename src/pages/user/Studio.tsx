@@ -49,24 +49,27 @@ const Studio: React.FC = () => {
 
       if (sessionData) {
         sessionData.status = 'active';
+        const pkgId = Number(sessionData.package_id) || 1;
+        if (!sessionData.photos_count) {
+          sessionData.photos_count = pkgId === 1 ? 3 : pkgId === 2 ? 4 : pkgId === 3 ? 6 : pkgId === 4 ? 8 : 3;
+        }
+        if (!sessionData.duration) {
+          sessionData.duration = pkgId === 1 ? 1 : pkgId === 2 ? 2 : pkgId === 3 ? 3 : pkgId === 4 ? 4 : 1;
+        }
       } else {
         sessionData = {
           id: sessionId || 'cies-session',
           package_id: 1,
           status: 'active',
-          photos_count: 4,
-          duration: 5,
+          photos_count: 3,
+          duration: 1,
           created_at: new Date().toISOString()
         } as Session;
       }
 
       setSession(sessionData);
       startCamera();
-      if (sessionData.duration) {
-        setTimeLeft(sessionData.duration * 60);
-      } else {
-        setTimeLeft(300);
-      }
+      setTimeLeft((sessionData.duration || 1) * 60);
     };
 
     checkSession();

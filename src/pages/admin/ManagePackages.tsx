@@ -127,7 +127,7 @@ const ManagePackages: React.FC = () => {
       </div>
 
       <div className="bg-white/5 rounded-2xl sm:rounded-3xl border border-white/10 overflow-x-auto">
-        <table className="w-full text-left min-w-125">
+        <table className="w-full text-left min-w-[600px]">
           <thead>
             <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
               <th className="px-4 sm:px-8 py-4 sm:py-6">Nama</th>
