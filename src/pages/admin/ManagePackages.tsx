@@ -5,10 +5,10 @@ import { Package } from '../../types';
 import { fetchPackages, savePackageApi, deletePackageApi } from '../../services/api';
 
 const defaultPackages: Package[] = [
-  { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, photos_count: 3, duration: 5, description: 'Format strip klasik 3 foto' },
-  { id: 2, name: 'Standard Strip (4 Foto)', price: 2500, photos_count: 4, duration: 5, description: 'Format strip populer 4 foto' },
-  { id: 3, name: 'Grid Double (6 Foto)', price: 3500, photos_count: 6, duration: 10, description: 'Format grid 6 foto seru' },
-  { id: 4, name: 'Unlimited Pass', price: 4500, photos_count: 8, duration: 15, description: 'Format penuh 8 foto lengkap' }
+  { id: 1, name: 'Photobooth Kolase A', price: 1500, photos_count: 3, duration: 1, description: 'Format 3 foto (1 menit)' },
+  { id: 2, name: 'Photobooth Kolase B', price: 2500, photos_count: 4, duration: 2, description: 'Format 4 foto (2 menit)' },
+  { id: 3, name: 'Photobooth Kolase C', price: 3500, photos_count: 6, duration: 3, description: 'Format 6 foto (3 menit)' },
+  { id: 4, name: 'Photobooth Kolase D', price: 4500, photos_count: 8, duration: 4, description: 'Format 8 foto (4 menit)' }
 ];
 
 const ManagePackages: React.FC = () => {
@@ -151,11 +151,6 @@ const ManagePackages: React.FC = () => {
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">
                   {pkg.duration} menit
-                </td>
-                <td className="px-4 sm:px-8 py-4 sm:py-6 whitespace-nowrap">
-                  <span className="px-3 py-1 bg-emerald-400/10 text-emerald-400 text-[10px] font-black rounded-full uppercase tracking-widest">
-                    Aktif
-                  </span>
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-center whitespace-nowrap">
                   <div className="flex justify-center gap-1.5 sm:gap-2">

@@ -266,12 +266,12 @@ const Studio: React.FC = () => {
           Photobooth <span className="text-primary italic font-serif">Studio</span>
         </h1>
         <div className="flex items-center justify-center gap-6 text-sm font-bold">
-          <div className="opacity-60">Foto: {photos.length}/{session.photos_count}</div>
+          <div className="opacity-60">Foto: {photos.length}/{session.photos_count || 3}</div>
           <div className="text-rose-500 flex items-center gap-1.5">
             Waktu: {formatTime(timeLeft)} {!isSessionStarted && <span className="text-xs text-slate-400 font-medium">(Belum dimulai)</span>}
           </div>
         </div>
-        {photos.length >= session.photos_count && (
+        {photos.length >= (session.photos_count || 3) && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -358,11 +358,11 @@ const Studio: React.FC = () => {
                 className="flex-1 px-5 py-3.5 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-primary/20 text-xs sm:text-sm whitespace-nowrap min-h-[3.25rem]"
               >
                 <Camera size={18} />
-                {photos.length > 0 && photos.length < session.photos_count 
-                  ? `Lengkapi Foto (${session.photos_count - photos.length})` 
-                  : photos.length >= session.photos_count 
+                {photos.length > 0 && photos.length < (session.photos_count || 3) 
+                  ? `Lengkapi Foto (${(session.photos_count || 3) - photos.length})` 
+                  : photos.length >= (session.photos_count || 3) 
                     ? "Mulai Ulang Sesi" 
-                    : `Mulai Foto (${session.photos_count} foto)`}
+                    : `Mulai Foto (${session.photos_count || 3} foto)`}
               </button>
 
               <button
@@ -387,7 +387,7 @@ const Studio: React.FC = () => {
           <div className="bg-white/5 rounded-[2rem] border border-white/5 p-8">
             <div className="flex items-center gap-2 mb-6 text-sm font-bold uppercase tracking-widest">
               <ImageIcon size={18} className="text-primary" />
-              Foto Anda ({photos.length}/{session.photos_count})
+              Foto Anda ({photos.length}/{session.photos_count || 3})
             </div>
             
             <div className="aspect-video bg-white/5 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden">
