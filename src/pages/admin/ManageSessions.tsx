@@ -94,7 +94,6 @@ const ManageSessions: React.FC = () => {
               <th className="px-4 sm:px-8 py-4 sm:py-6">Tanggal</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6">Paket</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6">Jumlah</th>
-              <th className="px-4 sm:px-8 py-4 sm:py-6 text-center">Status</th>
               <th className="px-4 sm:px-8 py-4 sm:py-6 text-center">Aksi</th>
             </tr>
           </thead>
@@ -124,15 +123,6 @@ const ManageSessions: React.FC = () => {
                       <div className="p-2.5 sm:p-3 opacity-20">
                         <Eye size={16} />
                       </div>
-                    )}
-                    {session.status === 'pending' && (
-                      <button 
-                        onClick={() => handleApprove(session.id)}
-                        className="p-2.5 sm:p-3 bg-emerald-400/10 border border-emerald-400/20 rounded-xl hover:bg-emerald-400/20 hover:border-emerald-400/50 transition-all text-emerald-400"
-                        title="Approve Pembayaran"
-                      >
-                        <CheckCircle size={16} />
-                      </button>
                     )}
                     <button 
                       onClick={() => handleDelete(session.id)}

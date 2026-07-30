@@ -79,7 +79,7 @@ const ManageStickers: React.FC = () => {
   return (
     <AdminLayout title="Kelola Stiker">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-12">
-        <h2 className="text-xl sm:text-3xl font-black tracking-tight font-serif">Kelola <span className="text-primary italic">Stiker Gambar</span></h2>
+        <h2 className="text-xl sm:text-3xl font-black tracking-tight font-serif">Kelola <span className="text-primary italic">Stiker</span></h2>
         <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
           <button 
             onClick={loadStickers}
