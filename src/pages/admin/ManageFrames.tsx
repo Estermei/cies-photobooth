@@ -64,7 +64,7 @@ const ManageFrames: React.FC = () => {
   };
 
   const confirmDelete = async () => {
-    if (!deleteCandidateId) return;
+    if (deleteCandidateId === null || deleteCandidateId === undefined) return;
     try {
       await deleteFrameApi(deleteCandidateId);
       await loadFrames();

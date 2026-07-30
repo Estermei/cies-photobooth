@@ -64,7 +64,7 @@ const ManageStickers: React.FC = () => {
   };
 
   const confirmDelete = async () => {
-    if (!deleteCandidateId) return;
+    if (deleteCandidateId === null || deleteCandidateId === undefined) return;
     try {
       await deleteStickerApi(deleteCandidateId);
       await loadStickers();

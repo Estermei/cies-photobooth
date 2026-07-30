@@ -22,6 +22,7 @@ import {
 import { Package, Frame, Sticker, Session } from "../types";
 
 // Firebase Client Configuration
+// Firebase Client Configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAiOZ0F3Hpm383M4lmnFrRCdT50n19Jc6I",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "ciesphotobooth.firebaseapp.com",
@@ -40,10 +41,10 @@ export const storage = getStorage(app);
 
 // Default packages seed
 export const defaultPackages: Package[] = [
-  { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, photos_count: 3, duration: 5, description: 'Format strip klasik 3 foto' },
-  { id: 2, name: 'Standard Strip (4 Foto)', price: 2500, photos_count: 4, duration: 5, description: 'Format strip populer 4 foto' },
-  { id: 3, name: 'Grid Double (6 Foto)', price: 3500, photos_count: 6, duration: 10, description: 'Format grid 6 foto seru' },
-  { id: 4, name: 'Unlimited Pass', price: 4500, photos_count: 8, duration: 15, description: 'Format penuh 8 foto lengkap' }
+  { id: 1, name: 'Photobooth Kolase A', price: 1500, photos_count: 3, duration: 1, description: 'Format 3 foto (1 menit)' },
+  { id: 2, name: 'Photobooth Kolase B', price: 2500, photos_count: 4, duration: 2, description: 'Format 4 foto (2 menit)' },
+  { id: 3, name: 'Photobooth Kolase C', price: 3500, photos_count: 6, duration: 3, description: 'Format 6 foto (3 menit)' },
+  { id: 4, name: 'Photobooth Kolase D', price: 4500, photos_count: 8, duration: 4, description: 'Format 8 foto (4 menit)' }
 ];
 
 // --- PACKAGES ---
@@ -102,7 +103,7 @@ export async function getFramesFromFirestore(): Promise<Frame[]> {
 import { compressImage } from '../utils/imageCompressor';
 
 // Helper function to convert file to lightweight Base64 preserving transparency
-async function compressAndConvertToBase64(file: File, maxDim = 1000): Promise<string> {
+async function compressAndConvertToBase64(file: File, maxDim = 800): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -129,7 +130,14 @@ async function compressAndConvertToBase64(file: File, maxDim = 1000): Promise<st
         ctx.drawImage(img, 0, 0, width, height);
         const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
         const mimeType = isPng ? 'image/png' : 'image/jpeg';
-        const dataUrl = canvas.toDataURL(mimeType, 0.85);
+        let dataUrl = canvas.toDataURL(mimeType, 0.8);
+        
+        if (dataUrl.length > 500000) {
+          canvas.width = Math.round(width * 0.7);
+          canvas.height = Math.round(height * 0.7);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          dataUrl = canvas.toDataURL(mimeType, 0.7);
+        }
         resolve(dataUrl);
       };
       img.onerror = () => resolve(reader.result as string);
@@ -141,7 +149,7 @@ async function compressAndConvertToBase64(file: File, maxDim = 1000): Promise<st
 }
 
 // Helper function to handle upload with Storage, with fast automatic Base64 fallback
-async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, timeoutMs = 1500): Promise<string> {
+async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, timeoutMs = 300): Promise<string> {
   try {
     const uploadPromise = (async () => {
       const snapshot = await uploadBytes(storageRef, fileToUpload);
@@ -154,61 +162,58 @@ async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, t
 
     return await Promise.race([uploadPromise, timeoutPromise]);
   } catch (err) {
-    console.warn("Firebase Storage fallback to Base64:", err);
-    return await compressAndConvertToBase64(fileToUpload, 1000);
+    return await compressAndConvertToBase64(fileToUpload, 800);
   }
 }
 
 export async function uploadFrameToFirebase(name: string, photosCount: number, file: File): Promise<Frame> {
-  const fileExt = file.name.split('.').pop() || 'png';
-  const fileName = `frames/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-  const storageRef = ref(storage, fileName);
+  let downloadURL = '';
+  try {
+    const fileExt = file.name.split('.').pop() || 'png';
+    const fileName = `frames/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const storageRef = ref(storage, fileName);
+    downloadURL = await uploadToStorageWithTimeout(storageRef, file, 300);
+  } catch (e) {
+    downloadURL = await compressAndConvertToBase64(file, 800);
+  }
 
-  const downloadURL = await uploadToStorageWithTimeout(storageRef, file);
+  if (!downloadURL) {
+    downloadURL = await compressAndConvertToBase64(file, 800);
+  }
 
-  const newId = Date.now();
+  const newId = Date.now().toString();
   const frameData = {
     id: newId,
     name,
     photos_count: photosCount,
     image_url: downloadURL,
-    storagePath: fileName,
     created_at: new Date().toISOString()
   };
 
-  await setDoc(doc(db, "frames", newId.toString()), frameData);
-  return frameData as Frame;
+  await setDoc(doc(db, "frames", newId), frameData);
+  return frameData as unknown as Frame;
 }
 
 export async function deleteFrameFromFirestore(id: number | string) {
+  if (id === null || id === undefined) return;
   const docIdStr = id.toString();
+  
   try {
-    const frameDocRef = doc(db, "frames", docIdStr);
-    const snap = await getDoc(frameDocRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data.storagePath) {
-        try { await deleteObject(ref(storage, data.storagePath)); } catch (e) {}
-      }
-      await deleteDoc(frameDocRef);
-      return;
-    }
-  } catch (e) {}
+    await deleteDoc(doc(db, "frames", docIdStr));
+  } catch (e) {
+    console.warn("Direct delete frame error:", e);
+  }
 
   try {
     const snap = await getDocs(collection(db, "frames"));
     for (const docSnap of snap.docs) {
       const data = docSnap.data();
-      if (docSnap.id === docIdStr || data.id?.toString() === docIdStr || data.id === id) {
-        if (data.storagePath) {
-          try { await deleteObject(ref(storage, data.storagePath)); } catch (e) {}
-        }
+      if (docSnap.id === docIdStr || data.id?.toString() === docIdStr || String(data.id) === String(id)) {
         await deleteDoc(docSnap.ref);
       }
     }
   } catch (err) {
-    console.error("Failed to delete frame:", err);
-    throw err;
+    console.error("Failed to delete frame from collection:", err);
   }
 }
 
@@ -230,54 +235,52 @@ export async function getStickersFromFirestore(): Promise<Sticker[]> {
 }
 
 export async function uploadStickerToFirebase(name: string, file: File): Promise<Sticker> {
-  const fileExt = file.name.split('.').pop() || 'png';
-  const fileName = `stickers/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-  const storageRef = ref(storage, fileName);
+  let downloadURL = '';
+  try {
+    const fileExt = file.name.split('.').pop() || 'png';
+    const fileName = `stickers/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const storageRef = ref(storage, fileName);
+    downloadURL = await uploadToStorageWithTimeout(storageRef, file, 300);
+  } catch (e) {
+    downloadURL = await compressAndConvertToBase64(file, 600);
+  }
 
-  const downloadURL = await uploadToStorageWithTimeout(storageRef, file);
+  if (!downloadURL) {
+    downloadURL = await compressAndConvertToBase64(file, 600);
+  }
 
-  const newId = Date.now();
+  const newId = Date.now().toString();
   const stickerData = {
     id: newId,
     name,
     image_url: downloadURL,
-    storagePath: fileName,
     created_at: new Date().toISOString()
   };
 
-  await setDoc(doc(db, "stickers", newId.toString()), stickerData);
-  return { ...stickerData, id: newId.toString() } as unknown as Sticker;
+  await setDoc(doc(db, "stickers", newId), stickerData);
+  return stickerData as unknown as Sticker;
 }
 
 export async function deleteStickerFromFirestore(id: number | string) {
+  if (id === null || id === undefined) return;
   const docIdStr = id.toString();
+  
   try {
-    const stickerDocRef = doc(db, "stickers", docIdStr);
-    const snap = await getDoc(stickerDocRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data.storagePath) {
-        try { await deleteObject(ref(storage, data.storagePath)); } catch (e) {}
-      }
-      await deleteDoc(stickerDocRef);
-      return;
-    }
-  } catch (e) {}
+    await deleteDoc(doc(db, "stickers", docIdStr));
+  } catch (e) {
+    console.warn("Direct delete sticker error:", e);
+  }
 
   try {
     const snap = await getDocs(collection(db, "stickers"));
     for (const docSnap of snap.docs) {
       const data = docSnap.data();
-      if (docSnap.id === docIdStr || data.id?.toString() === docIdStr || data.id === id) {
-        if (data.storagePath) {
-          try { await deleteObject(ref(storage, data.storagePath)); } catch (e) {}
-        }
+      if (docSnap.id === docIdStr || data.id?.toString() === docIdStr || String(data.id) === String(id)) {
         await deleteDoc(docSnap.ref);
       }
     }
   } catch (err) {
-    console.error("Failed to delete sticker:", err);
-    throw err;
+    console.error("Failed to delete sticker from collection:", err);
   }
 }
 
