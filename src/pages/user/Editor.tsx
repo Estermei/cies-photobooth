@@ -346,10 +346,9 @@ const Editor: React.FC = () => {
     }));
   }, [activeMode, displayPhotos.length]);
 
-  // Inisialisasi foto yang dipilih
+  // Inisialisasi foto yang dipilih (Maksimal 4 foto untuk Photo Strip)
   useEffect(() => {
     if (photos.length > 0 && selectedPhotoIndices.length === 0) {
-      // Bawaan ke 4 foto pertama (atau semua jika kurang dari 4)
       setSelectedPhotoIndices(Array.from({ length: Math.min(photos.length, 4) }, (_, i) => i));
     }
   }, [photos]);
@@ -360,7 +359,6 @@ const Editor: React.FC = () => {
         return prev.filter(i => i !== index);
       }
       if (prev.length >= 4) {
-        // Abaikan jika sudah 4 foto terpesan
         return prev;
       }
       return [...prev, index].sort((a, b) => a - b);
@@ -529,7 +527,7 @@ const Editor: React.FC = () => {
     }
 
     if (mode === 'all-individual') {
-      displayPhotos.forEach((_, idx) => {
+      photos.forEach((_, idx) => {
         setTimeout(() => {
           const stage = individualStageRefs.current[idx];
           if (stage) {
@@ -829,7 +827,7 @@ const Editor: React.FC = () => {
                     <Layer>
                       {/* Raw Photo (fills the entire stage) */}
                       <PhotoItem
-                        url={displayPhotos[activeIndividualIndex]}
+                        url={photos[activeIndividualIndex]}
                         x={0}
                         y={0}
                         width={400}
@@ -846,12 +844,12 @@ const Editor: React.FC = () => {
               </div>
 
               {/* Thumbnails Row */}
-              <div className="flex justify-center gap-3 mt-2 mb-4">
-                {displayPhotos.map((photo, i) => (
+              <div className="flex justify-start sm:justify-center gap-2.5 mt-2 mb-4 overflow-x-auto max-w-full pb-2 custom-scrollbar px-1">
+                {photos.map((photo, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveIndividualIndex(i)}
-                    className={`relative w-14 h-14 rounded-xl overflow-hidden transition-all duration-200 border-2 ${
+                    className={`relative w-14 h-14 rounded-xl overflow-hidden transition-all duration-200 border-2 shrink-0 ${
                       activeIndividualIndex === i 
                         ? 'border-primary ring-2 ring-primary/20 scale-105' 
                         : 'border-white/10 opacity-65 hover:opacity-100 hover:scale-105'
@@ -897,7 +895,7 @@ const Editor: React.FC = () => {
                       console.error("Error exporting individual photo:", err);
                       // Cadangan: unduh langsung URL foto mentah dari penyimpanan
                       try {
-                        const rawUrl = displayPhotos[activeIndividualIndex];
+                        const rawUrl = photos[activeIndividualIndex];
                         if (rawUrl) {
                           const link = document.createElement('a');
                           link.download = `cies-raw-photo-${activeIndividualIndex + 1}-${sessionId}.jpg`;
@@ -921,7 +919,7 @@ const Editor: React.FC = () => {
                   className="flex-1 py-3 bg-primary text-white hover:bg-opacity-90 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20"
                 >
                   <Download size={16} />
-                  Unduh Semua ({displayPhotos.length})
+                  Unduh Semua ({photos.length})
                 </button>
               </div>
             </div>
@@ -929,7 +927,7 @@ const Editor: React.FC = () => {
 
           {/* Hidden background stages to compile ALL individual photos for bulk download */}
           <div className="absolute left-[-9999px] top-[-9999px] pointer-events-none overflow-hidden">
-            {displayPhotos.map((photo, i) => (
+            {photos.map((photo, i) => (
               <Stage 
                 key={`indiv-hidden-${i}-${forceRedraw}`}
                 width={400} 
@@ -977,13 +975,13 @@ const Editor: React.FC = () => {
 
         {/* Right: Sidebar Controls */}
         <div className="w-full lg:w-[380px] flex flex-col gap-4 h-[calc(100vh-100px)] overflow-y-auto pr-2 custom-scrollbar pb-10">
-          {/* Pilih Foto (Hanya jika > 4 foto) */}
+          {/* Pilih 4 Foto untuk Strip (Jika foto yang diambil > 4) */}
           {photos.length > 4 && (
             <section className="bg-white/5 rounded-2xl border border-white/5 p-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary">
                   <ImageIcon size={12} />
-                  Pilih 4 Foto
+                  PILIH 4 FOTO
                 </div>
                 <span className="text-[10px] font-bold text-slate-400">{selectedPhotoIndices.length}/4</span>
               </div>
