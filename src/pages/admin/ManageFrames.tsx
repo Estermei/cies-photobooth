@@ -137,7 +137,7 @@ const ManageFrames: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Upload File Gambar Frame (PNG Transparan)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Upload File Gambar Frame</label>
                 <div className="relative aspect-2/3 bg-black/20 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
                   {preview ? (
                     <img src={preview} alt="Preview" className="w-full h-full object-contain p-4" />

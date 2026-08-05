@@ -152,7 +152,7 @@ const ManageStickers: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">File Gambar (PNG/SVG Transparan)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">File Gambar</label>
                 <div className="relative aspect-square bg-black/20 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
                   {preview ? (
                     <img src={preview} alt="Preview" className="w-full h-full object-contain p-8" />
