@@ -124,6 +124,14 @@ async function compressAndConvertToBase64(file: File, maxDim = 1200, isPaymentPr
     const reader = new FileReader();
     reader.onload = () => {
       const rawResult = reader.result as string;
+
+      // Untuk Bukti Pembayaran (Payment Proof), gunakan data Base64 hasil FileReader secara langsung 
+      // tanpa melalui pengolahan HTML Canvas agar tidak menjadi putih/hitam di perangkat HP (Mobile).
+      if (isPaymentProof || !rawResult) {
+        resolve(rawResult);
+        return;
+      }
+
       const img = new Image();
       img.onload = () => {
         let { width, height } = img;
@@ -145,28 +153,11 @@ async function compressAndConvertToBase64(file: File, maxDim = 1200, isPaymentPr
           return;
         }
 
-        // Fill background with solid white to prevent transparent PNG / screenshots turning solid black when rendered or converted to JPEG
-        if (isPaymentProof || file.type !== 'image/png') {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, width, height);
-        }
-
         ctx.drawImage(img, 0, 0, width, height);
         const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
-        const mimeType = (isPng && !isPaymentProof) ? 'image/png' : 'image/jpeg';
+        const mimeType = isPng ? 'image/png' : 'image/jpeg';
         let dataUrl = canvas.toDataURL(mimeType, 0.85);
-        
-        if (dataUrl.length > 800000 && (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/png'))) {
-          canvas.width = Math.round(width * 0.7);
-          canvas.height = Math.round(height * 0.7);
-          if (isPaymentProof || file.type !== 'image/png') {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-          }
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          dataUrl = canvas.toDataURL(mimeType, 0.75);
-        }
-        resolve(dataUrl);
+        resolve(dataUrl || rawResult);
       };
       img.onerror = () => resolve(rawResult);
       img.src = rawResult;
