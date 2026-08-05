@@ -119,10 +119,11 @@ export async function getFramesFromFirestore(): Promise<Frame[]> {
 import { compressImage } from '../utils/imageCompressor';
 
 // Helper function to convert file to lightweight Base64 preserving transparency
-async function compressAndConvertToBase64(file: File, maxDim = 800): Promise<string> {
+async function compressAndConvertToBase64(file: File, maxDim = 1200, isPaymentProof = false): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => {
+      const rawResult = reader.result as string;
       const img = new Image();
       img.onload = () => {
         let { width, height } = img;
@@ -140,24 +141,35 @@ async function compressAndConvertToBase64(file: File, maxDim = 800): Promise<str
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          resolve(reader.result as string);
+          resolve(rawResult);
           return;
         }
+
+        // Fill background with solid white to prevent transparent PNG / screenshots turning solid black when rendered or converted to JPEG
+        if (isPaymentProof || file.type !== 'image/png') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+        }
+
         ctx.drawImage(img, 0, 0, width, height);
         const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
-        const mimeType = isPng ? 'image/png' : 'image/jpeg';
-        let dataUrl = canvas.toDataURL(mimeType, 0.8);
+        const mimeType = (isPng && !isPaymentProof) ? 'image/png' : 'image/jpeg';
+        let dataUrl = canvas.toDataURL(mimeType, 0.85);
         
-        if (dataUrl.length > 500000) {
+        if (dataUrl.length > 800000 && (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/png'))) {
           canvas.width = Math.round(width * 0.7);
           canvas.height = Math.round(height * 0.7);
+          if (isPaymentProof || file.type !== 'image/png') {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          dataUrl = canvas.toDataURL(mimeType, 0.7);
+          dataUrl = canvas.toDataURL(mimeType, 0.75);
         }
         resolve(dataUrl);
       };
-      img.onerror = () => resolve(reader.result as string);
-      img.src = reader.result as string;
+      img.onerror = () => resolve(rawResult);
+      img.src = rawResult;
     };
     reader.onerror = () => resolve('');
     reader.readAsDataURL(file);
@@ -165,7 +177,7 @@ async function compressAndConvertToBase64(file: File, maxDim = 800): Promise<str
 }
 
 // Helper function to handle upload with Storage, with fast automatic Base64 fallback
-async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, timeoutMs = 300): Promise<string> {
+async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, timeoutMs = 10000, isPaymentProof = false): Promise<string> {
   try {
     const uploadPromise = (async () => {
       const snapshot = await uploadBytes(storageRef, fileToUpload);
@@ -178,7 +190,8 @@ async function uploadToStorageWithTimeout(storageRef: any, fileToUpload: File, t
 
     return await Promise.race([uploadPromise, timeoutPromise]);
   } catch (err) {
-    return await compressAndConvertToBase64(fileToUpload, 800);
+    console.warn("Storage upload failed or timed out, using base64 fallback:", err);
+    return await compressAndConvertToBase64(fileToUpload, 1200, isPaymentProof);
   }
 }
 
@@ -351,7 +364,7 @@ export async function uploadPaymentProofToFirebase(sessionId: string, file: File
   const fileName = `payments/${sessionId}_${Date.now()}.${fileExt}`;
   const storageRef = ref(storage, fileName);
 
-  const downloadURL = await uploadToStorageWithTimeout(storageRef, file);
+  const downloadURL = await uploadToStorageWithTimeout(storageRef, file, 10000, true);
 
   const docRef = doc(db, "sessions", sessionId);
   await updateDoc(docRef, {
