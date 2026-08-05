@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { Plus, Trash2, Edit2, X, Save, RefreshCw } from 'lucide-react';
-import { Package } from '../../types';
+import { Package, normalizeDurationToSeconds, formatDuration } from '../../types';
 import { fetchPackages, savePackageApi, deletePackageApi } from '../../services/api';
 
 const defaultPackages: Package[] = [
-  { id: 1, name: 'Photobooth Kolase A', price: 1500, photos_count: 3, duration: 1, description: 'Format 3 foto (1 menit)' },
-  { id: 2, name: 'Photobooth Kolase B', price: 2500, photos_count: 4, duration: 2, description: 'Format 4 foto (2 menit)' },
-  { id: 3, name: 'Photobooth Kolase C', price: 3500, photos_count: 6, duration: 3, description: 'Format 6 foto (3 menit)' },
-  { id: 4, name: 'Photobooth Kolase D', price: 4500, photos_count: 8, duration: 4, description: 'Format 8 foto (4 menit)' }
+  { id: 1, name: 'Photobooth Kolase A', price: 1500, photos_count: 3, duration: 30, description: 'All digital copies,\n1 Photo Strip' },
+  { id: 2, name: 'Photobooth Kolase B', price: 2500, photos_count: 4, duration: 60, description: 'All digital copies,\n1 Photo Strip' },
+  { id: 3, name: 'Photobooth Kolase C', price: 3500, photos_count: 6, duration: 120, description: 'All digital copies,\n2 Photo Strip' },
+  { id: 4, name: 'Photobooth Kolase D', price: 4500, photos_count: 8, duration: 180, description: 'All digital copies,\n2 Photo Strip' }
 ];
 
 const ManagePackages: React.FC = () => {
@@ -20,7 +20,7 @@ const ManagePackages: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     price: 0,
-    duration: 0,
+    duration: 30,
     photos_count: 0,
     description: ''
   });
@@ -55,7 +55,7 @@ const ManagePackages: React.FC = () => {
       });
       setIsModalOpen(false);
       setEditingPackage(null);
-      setFormData({ name: '', price: 0, duration: 0, photos_count: 0, description: '' });
+      setFormData({ name: '', price: 0, duration: 30, photos_count: 0, description: '' });
       await loadPackages();
     } catch (err) {
       console.error(err);
@@ -68,7 +68,7 @@ const ManagePackages: React.FC = () => {
     setFormData({
       name: pkg.name,
       price: pkg.price,
-      duration: pkg.duration,
+      duration: normalizeDurationToSeconds(pkg.duration),
       photos_count: pkg.photos_count,
       description: pkg.description
     });
@@ -115,7 +115,7 @@ const ManagePackages: React.FC = () => {
           <button
             onClick={() => {
               setEditingPackage(null);
-              setFormData({ name: '', price: 0, duration: 0, photos_count: 0, description: '' });
+              setFormData({ name: '', price: 0, duration: 30, photos_count: 0, description: '' });
               setIsModalOpen(true);
             }}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-primary text-white rounded-xl hover:bg-opacity-90 transition-all text-xs sm:text-sm font-bold shadow-lg shadow-primary/20"
@@ -150,7 +150,7 @@ const ManagePackages: React.FC = () => {
                   {pkg.photos_count}x
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">
-                  {pkg.duration} menit
+                  {formatDuration(pkg.duration)}
                 </td>
                 <td className="px-4 sm:px-8 py-4 sm:py-6 text-center whitespace-nowrap">
                   <div className="flex justify-center gap-1.5 sm:gap-2">
@@ -214,13 +214,14 @@ const ManagePackages: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Durasi (Menit)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Durasi</label>
                   <input
                     type="number"
                     required
                     value={formData.duration}
                     onChange={e => setFormData({ ...formData, duration: Number(e.target.value) })}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-primary transition-colors"
+                    placeholder="Contoh: 30 atau 15"
                   />
                 </div>
               </div>

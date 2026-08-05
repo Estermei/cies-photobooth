@@ -1,6 +1,6 @@
 # CIES Photobooth Application
 
-Aplikasi Web Photobooth interaktif dan modern yang dibangun menggunakan **React (Vite)** di sisi Frontend dan **Express.js (Node.js)** dengan database **SQLite (better-sqlite3)** di sisi Backend.
+Aplikasi Web Photobooth interaktif dan modern yang dibangun menggunakan **React (Vite)** di sisi Frontend dan **Express.js (Node.js)** serta **Firebase (Firestore & Firebase Storage)** sebagai layanan database & media storage.
 
 ---
 
@@ -10,16 +10,12 @@ Struktur folder dikelompokkan secara rapi dan modular memisahkan tanggung jawab 
 
 ```
 ciesphotobooth/
-├── public/                 # Aset statis & berkas hasil unggahan pengguna
-│   ├── uploads/            # Direktori penyimpanan berkas yang diunggah
-│   │   ├── frames/         # Berkas bingkai/frame yang diunggah admin
-│   │   ├── stickers/       # Berkas stiker yang diunggah admin
-│   │   └── proofs/         # Bukti transfer pembayaran sesi
+├── public/                 # Aset statis & berkas bawaan aplikasi
 │   └── qris.jpeg           # Gambar QRIS untuk pembayaran
 │
 ├── server/                 # Sisi Backend (Express.js)
-│   ├── config/             # Konfigurasi aplikasi & koneksi Database SQLite
-│   │   └── database.ts     # Inisialisasi & sinkronisasi database SQLite
+│   ├── config/             # Konfigurasi aplikasi & koneksi Database
+│   │   └── database.ts     # Inisialisasi & sinkronisasi database
 │   ├── controllers/        # Logika bisnis & pengolah request/response API
 │   │   ├── package.controller.ts
 │   │   ├── frame.controller.ts
@@ -37,10 +33,12 @@ ciesphotobooth/
 ├── src/                    # Sisi Frontend (React + Vite + Tailwind CSS)
 │   ├── assets/             # Gambar, ikon, & aset visual frontend
 │   ├── components/         # Komponen UI reusable (Modal, Button, Navbar, dll)
+│   ├── lib/                # Konfigurasi & Inisialisasi Firebase Cloud Services
+│   │   └── firebase.ts
 │   ├── pages/              # Halaman-halaman aplikasi
-│   │   ├── admin/          # Halaman Admin (Dashboard, Kelola Paket, Frame, Sesi, Stiker)
-│   │   └── user/           # Halaman Pengguna (Landing, Pilih Paket, Kasir, Booth Foto)
-│   ├── services/           # Service penanganan fetch API ke Backend
+│   │   ├── admin/          # Halaman Admin (Dashboard, Kelola Paket, Frame, Pembayaran, Stiker, Laporan)
+│   │   └── user/           # Halaman Pengguna (Landing, Pilih Paket, Kasir, Studio Booth, Editor Foto)
+│   ├── services/           # Service penanganan fetch API & database
 │   │   └── api.ts
 │   ├── App.tsx             # Routing & Komponen Utama Frontend
 │   ├── index.css           # Styling Global (Tailwind CSS)
@@ -66,24 +64,24 @@ ciesphotobooth/
   - Kamera live preview dengan countdown otomatis & flash visual.
   - Sesi jepret foto berulang sesuai kuota paket.
 - **Foto Editor / Dekorasi**:
-  - Pilihan filter warna foto.
-  - Pilihan bingkai (frame) dinamis dari database.
-  - Tambah & atur posisi stiker pada cetakan foto.
-- **Cetak / Unduh Strip Foto**: Mengunduh hasil kombinasi strip foto resolusi tinggi.
+  - **Photo Strip**: Memilih hingga 4 foto terbaik untuk dirangkai menjadi cetakan foto strip berframe.
+  - **Foto Individual**: Melihat dan mengunduh seluruh hasil foto tangkapan kamera secara individual satu per satu atau sekaligus.
+  - **Filter & Bentuk Foto**: Pilihan filter warna serta bentuk sudut foto (Normal, Rounded, Circle, Heart).
+  - **Frame & Stiker**: Pilihan bingkai dinamis dan koleksi stiker dekorasi yang bisa diatur posisinya.
 
 ### 🛡️ Fitur Panel Admin
-- **Manajemen Sesi Pelanggan**: Melihat daftar transaksi, menyetujui (approve) sesi, dan menghapus sesi.
-- **Manajemen Paket Foto**: Menambah, mengedit, dan menghapus opsi paket photobooth.
-- **Manajemen Bingkai (Frame)**: Mengunggah berkas frame baru dan menentukan kuota foto untuk frame tersebut.
-- **Manajemen Stiker**: Mengunggah dan mengelola koleksi stiker dekorasi.
-- **Ringkasan Pendapatan & Statistik**: Laporan statistik transaksi dan total pendapatan.
+- **Riwayat Pembayaran**: Melihat daftar riwayat pembayaran pelanggan, melihat bukti transfer, dan menghapus riwayat.
+- **Kelola Paket**: Menambah, mengedit, dan menghapus opsi paket photobooth.
+- **Kelola Frame**: Mengunggah berkas frame baru dan menentukan kuota foto untuk frame tersebut.
+- **Kelola Stiker**: Mengunggah dan mengelola koleksi stiker dekorasi.
+- **Laporan Transaksi**: Laporan statistik transaksi dan total pendapatan.
 
 ---
 
 ## 🛠️ Teknologi yang Digunakan
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide React (Icons), Motion (Animations), Canvas API.
-- **Backend**: Node.js, Express.js, TypeScript, Better-SQLite3 (Database), Multer (File Upload).
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide React (Icons), Motion (Animations), Konva (Canvas API).
+- **Backend & Storage**: Node.js, Express.js, TypeScript, Firebase Firestore & Storage, Multer.
 - **Tooling & Build**: Vite, esbuild, tsx.
 
 ---
@@ -138,8 +136,14 @@ npm run start
 
 ## 📄 Variabel Lingkungan (.env)
 
-Buat berkas `.env` berdasarkan contoh di `.env.example` jika diperlukan:
+Buat berkas `.env` berdasarkan contoh di `.env.example`:
 
 ```env
-APP_URL=http://localhost:3000
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
 ```

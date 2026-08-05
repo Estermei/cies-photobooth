@@ -40,10 +40,10 @@ export const storage = getStorage(app);
 
 // Default packages seed
 export const defaultPackages: Package[] = [
-  { id: 1, name: 'Photobooth Kolase A', price: 1500, photos_count: 3, duration: 1, description: 'Format 3 foto (1 menit)' },
-  { id: 2, name: 'Photobooth Kolase B', price: 2500, photos_count: 4, duration: 2, description: 'Format 4 foto (2 menit)' },
-  { id: 3, name: 'Photobooth Kolase C', price: 3500, photos_count: 6, duration: 3, description: 'Format 6 foto (3 menit)' },
-  { id: 4, name: 'Photobooth Kolase D', price: 4500, photos_count: 8, duration: 4, description: 'Format 8 foto (4 menit)' }
+  { id: 1, name: 'Photobooth Kolase A', price: 1500, photos_count: 3, duration: 30, description: 'All digital copies,\n1 Photo Strip' },
+  { id: 2, name: 'Photobooth Kolase B', price: 2500, photos_count: 4, duration: 60, description: 'All digital copies,\n1 Photo Strip' },
+  { id: 3, name: 'Photobooth Kolase C', price: 3500, photos_count: 6, duration: 120, description: 'All digital copies,\n2 Photo Strip' },
+  { id: 4, name: 'Photobooth Kolase D', price: 4500, photos_count: 8, duration: 180, description: 'All digital copies,\n2 Photo Strip' }
 ];
 
 // --- PACKAGES ---

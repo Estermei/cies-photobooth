@@ -2,10 +2,10 @@ import { Request, Response } from "express";
 import { db } from "../config/database.js";
 
 const defaultPackages = [
-  { id: 1, name: 'Basic Strip (3 Foto)', price: 1500, duration: 5, photos_count: 3, description: 'Format strip klasik 3 foto' },
-  { id: 2, name: 'Standard Strip (4 Foto)', price: 2500, duration: 5, photos_count: 4, description: 'Format strip populer 4 foto' },
-  { id: 3, name: 'Grid Double (6 Foto)', price: 3500, duration: 10, photos_count: 6, description: 'Format grid 6 foto seru' },
-  { id: 4, name: 'Unlimited Pass', price: 4500, duration: 15, photos_count: 8, description: 'Format penuh 8 foto lengkap' }
+  { id: 1, name: 'Photobooth Kolase A', price: 1500, duration: 30, photos_count: 3, description: 'All digital copies,\n1 Photo Strip' },
+  { id: 2, name: 'Photobooth Kolase B', price: 2500, duration: 60, photos_count: 4, description: 'All digital copies,\n1 Photo Strip' },
+  { id: 3, name: 'Photobooth Kolase C', price: 3500, duration: 120, photos_count: 6, description: 'All digital copies,\n2 Photo Strip' },
+  { id: 4, name: 'Photobooth Kolase D', price: 4500, duration: 180, photos_count: 8, description: 'All digital copies,\n2 Photo Strip' }
 ];
 
 export const getPackages = (req: Request, res: Response) => {

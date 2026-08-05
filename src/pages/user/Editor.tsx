@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Stage, Layer, Image as KonvaImage, Rect, Group, Text, Circle } from 'react-konva';
-import { Download, Layout, Sticker as StickerIcon, Check, ArrowLeft, Instagram, Image as ImageIcon, Heart, Square, Circle as CircleIcon, Sliders, Type, Smile, Palette, Filter as FilterIcon, Plus, Ban, Trash2 } from 'lucide-react';
+import { Download, Layout, Sticker as StickerIcon, Check, ArrowLeft, Instagram, Image as ImageIcon, Heart, Square, Circle as CircleIcon, Sliders, Type, Smile, Palette, Filter as FilterIcon, Plus, Ban } from 'lucide-react';
 import useImage from 'use-image';
 import Konva from 'konva';
 import { Frame, Sticker, Session } from '../../types';
@@ -960,14 +960,14 @@ const Editor: React.FC = () => {
                 className="flex-1 py-4 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-opacity-90 transition-all shadow-lg shadow-primary/20"
               >
                 <Download size={20} />
-                Unduh Biasa
+                Unduh Photo Strip
               </button>
               <button 
                 onClick={() => handleDownload('story')}
                 className="flex-1 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
               >
-                <Instagram size={20} />
-                IG Story
+                <Download size={20} />
+                Format IG Story
               </button>
             </div>
           )}
@@ -1227,23 +1227,10 @@ const Editor: React.FC = () => {
 
           {/* Stiker */}
           <section className="bg-white/5 rounded-2xl border border-white/5 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary">
-                <Smile size={12} />
-                Stiker
-              </div>
-              {appliedStickers.length > 0 && (
-                <button 
-                  type="button"
-                  onClick={() => setAppliedStickers([])}
-                  title={`Hapus (${appliedStickers.length}) stiker`}
-                  className="p-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors flex items-center justify-center cursor-pointer"
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
+            <div className="flex items-center gap-2 mb-4 text-[10px] font-bold uppercase tracking-widest text-primary">
+              <Smile size={12} />
+              Stiker
             </div>
-            <p className="text-[10px] text-slate-500 mb-3">✨ Pilih stiker di bawah untuk ditempelkan. Drag stiker untuk memindahkan.</p>
 
             <div className="grid grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
               {/* Tanpa Stiker / Clear Stickers */}

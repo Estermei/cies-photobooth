@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Camera, RefreshCw, CheckCircle2, Timer, Monitor, Sparkles, Info, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Session } from '../../types';
+import { Session, normalizeDurationToSeconds } from '../../types';
 import { fetchSessionById } from '../../services/api';
 import { set as idbSet } from 'idb-keyval';
 
@@ -69,7 +69,7 @@ const Studio: React.FC = () => {
 
       setSession(sessionData);
       startCamera();
-      setTimeLeft((sessionData.duration || 1) * 60);
+      setTimeLeft(normalizeDurationToSeconds(sessionData.duration));
     };
 
     checkSession();
