@@ -369,8 +369,9 @@ const Dashboard: React.FC = () => {
       (s.status === 'pending' && s.payment_proof_url)
     );
 
+    let resultList: SessionWithPrice[] = [];
     if (timeframe === 'harian') {
-      return paidSessions.filter(s => {
+      resultList = paidSessions.filter(s => {
         const d = new Date(s.created_at);
         return d >= startOfDay && d <= endOfDay;
       });
@@ -382,7 +383,7 @@ const Dashboard: React.FC = () => {
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
 
-      return paidSessions.filter(s => {
+      resultList = paidSessions.filter(s => {
         const d = new Date(s.created_at);
         return d >= startOfWeek && d <= endOfWeek;
       });
@@ -390,11 +391,18 @@ const Dashboard: React.FC = () => {
       const startOfMonth = new Date(year, monthNum - 1, 1, 0, 0, 0, 0);
       const endOfMonth = new Date(year, monthNum, 0, 23, 59, 59, 999);
 
-      return paidSessions.filter(s => {
+      resultList = paidSessions.filter(s => {
         const d = new Date(s.created_at);
         return d >= startOfMonth && d <= endOfMonth;
       });
     }
+
+    // Urutkan ascending: transaksi terlama/paling awal di atas, jam setelahnya di bawah
+    return resultList.sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeA - timeB;
+    });
   }, [sessions, selectedDate, timeframe]);
 
   const stats = useMemo(() => {

@@ -88,7 +88,7 @@ const Payment: React.FC = () => {
         if (document.body.contains(successToast)) {
           document.body.removeChild(successToast);
         }
-        navigate(`/studio/${sessionId}`);
+        navigate(`/studio/${sessionId}`, { replace: true });
       }, 1200);
     } catch (error: any) {
       console.error("Payment error:", error);

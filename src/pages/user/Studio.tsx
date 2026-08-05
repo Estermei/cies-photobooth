@@ -29,7 +29,14 @@ const Studio: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    // Kunci tombol Back browser/HP agar user tidak terlempar kembali ke halaman pembayaran
+    window.history.pushState(null, '', window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    window.addEventListener('popstate', handlePopState);
     return () => {
+      window.removeEventListener('popstate', handlePopState);
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
@@ -253,7 +260,7 @@ const Studio: React.FC = () => {
     try {
       // Gunakan IndexedDB via idb-keyval untuk menghindari batas kuota localStorage
       await idbSet(`photos_${sessionId}`, photos);
-      navigate(`/editor/${sessionId}`);
+      navigate(`/editor/${sessionId}`, { replace: true });
     } catch (e) {
       console.error("Error saving photos to IndexedDB:", e);
       alert("Gagal menyimpan foto. Pastikan browser Anda mengizinkan penyimpanan data.");

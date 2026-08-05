@@ -18,7 +18,12 @@ const ManageSessions: React.FC = () => {
     setLoading(true);
     try {
       const data = await fetchSessions();
-      setSessions(data as any);
+      const sortedData = [...(data as any[])].sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return timeB - timeA; // Terbaru di atas
+      });
+      setSessions(sortedData);
     } catch (err) {
       console.error(err);
     } finally {

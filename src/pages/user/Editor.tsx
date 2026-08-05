@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Stage, Layer, Image as KonvaImage, Rect, Group, Text, Circle } from 'react-konva';
-import { Download, Layout, Sticker as StickerIcon, Check, ArrowLeft, Instagram, Image as ImageIcon, Heart, Square, Circle as CircleIcon, Sliders, Type, Smile, Palette, Filter as FilterIcon, Plus, Ban } from 'lucide-react';
+import { Download, Layout, Sticker as StickerIcon, Check, ArrowLeft, Instagram, Image as ImageIcon, Heart, Square, Circle as CircleIcon, Sliders, Type, Smile, Palette, Filter as FilterIcon, Plus, Ban, RotateCcw } from 'lucide-react';
 import useImage from 'use-image';
 import Konva from 'konva';
 import { Frame, Sticker, Session } from '../../types';
@@ -346,6 +346,16 @@ const Editor: React.FC = () => {
     }));
   }, [activeMode, displayPhotos.length]);
 
+  useEffect(() => {
+    // Kunci tombol Back browser/HP agar pengguna tidak kembali ke studio/pembayaran setelah masuk editor
+    window.history.pushState(null, '', window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Inisialisasi foto yang dipilih (Maksimal 4 foto untuk Photo Strip)
   useEffect(() => {
     if (photos.length > 0 && selectedPhotoIndices.length === 0) {
@@ -660,12 +670,6 @@ const Editor: React.FC = () => {
           <div className="w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-8"></div>
           <h2 className="text-2xl font-black">Menyiapkan <span className="text-primary italic">Editor</span></h2>
           <p className="text-slate-400 max-w-xs mx-auto">Mohon tunggu sebentar, kami sedang memproses foto-foto Anda...</p>
-          <button 
-            onClick={() => navigate('/')}
-            className="mt-8 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold hover:bg-white/10 transition-all cursor-pointer"
-          >
-            Kembali ke Beranda
-          </button>
         </div>
       </div>
     );
@@ -1153,9 +1157,24 @@ const Editor: React.FC = () => {
 
           {/* Penyesuaian */}
           <section className="bg-white/5 rounded-2xl border border-white/5 p-4">
-            <div className="flex items-center gap-2 mb-4 text-[10px] font-bold uppercase tracking-widest text-primary">
-              <Sliders size={12} />
-              Penyesuaian
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary">
+                <Sliders size={12} />
+                Penyesuaian
+              </div>
+              {(brightness !== 100 || contrast !== 100 || saturation !== 100) && (
+                <button 
+                  onClick={() => {
+                    setBrightness(100);
+                    setContrast(100);
+                    setSaturation(100);
+                  }}
+                  className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-white transition-colors cursor-pointer bg-white/5 px-2 py-1 rounded-md border border-white/10"
+                >
+                  <RotateCcw size={10} />
+                  Reset
+                </button>
+              )}
             </div>
             <div className="space-y-3">
               {[
