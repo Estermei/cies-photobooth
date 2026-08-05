@@ -1,6 +1,6 @@
-export async function compressImage(file: File, maxDimension = 2400, quality = 0.92): Promise<File> {
-  // SVG, file PNG transparan (frame/stiker < 5MB), atau file kecil tidak perlu dikompresi agar kualitas 100% jernih dan tajam
-  if (file.type === 'image/svg+xml' || (file.type === 'image/png' && file.size < 5 * 1024 * 1024) || file.size < 500 * 1024) {
+export async function compressImage(file: File, maxDimension = 1200, quality = 0.85): Promise<File> {
+  // SVG or small files (< 300KB) don't need compression
+  if (file.type === 'image/svg+xml' || file.size < 300 * 1024) {
     return file;
   }
 
@@ -10,12 +10,6 @@ export async function compressImage(file: File, maxDimension = 2400, quality = 0
     img.onload = () => {
       URL.revokeObjectURL(url);
       let { width, height } = img;
-
-      // Jika resolusi di bawah batas maxDimension, gunakan file asli tanpa dikompres
-      if (width <= maxDimension && height <= maxDimension && file.type === 'image/png') {
-        resolve(file);
-        return;
-      }
 
       if (width > maxDimension || height > maxDimension) {
         if (width > height) {
@@ -36,11 +30,8 @@ export async function compressImage(file: File, maxDimension = 2400, quality = 0
         return;
       }
 
-      // Pastikan re-draw menggunakan image smoothing berkualitas tinggi
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
-
+      // Keep PNG for transparent frames/stickers
       const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
       canvas.toBlob((blob) => {
         if (!blob) {
