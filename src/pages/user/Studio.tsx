@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Camera, RefreshCw, CheckCircle2, Timer, Monitor, Sparkles, Info, Image as ImageIcon } from 'lucide-react';
+import { Camera, RefreshCw, CheckCircle2, Timer, Monitor, Sparkles, Info, Image as ImageIcon, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Session, normalizeDurationToSeconds } from '../../types';
 import { fetchSessionById } from '../../services/api';
@@ -15,6 +15,7 @@ const Studio: React.FC = () => {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isMirror, setIsMirror] = useState(true);
+  const [isFitMode, setIsFitMode] = useState(false);
   const [intervalTime, setIntervalTime] = useState<3 | 5>(3);
   const [timeLeft, setTimeLeft] = useState<number>(-1);
   const [isAutoCapturing, setIsAutoCapturing] = useState(false);
@@ -99,13 +100,24 @@ const Studio: React.FC = () => {
   const startCamera = async () => {
     if (stream) return; // Already started
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ 
+      // Minta resolusi HD maksimal yang didukung hardware kamera HP/Laptop
+      const constraints: MediaStreamConstraints = {
         video: { 
           facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { min: 640, ideal: 1920 },
+          height: { min: 480, ideal: 1080 },
+          frameRate: { ideal: 30, max: 60 }
         } 
-      });
+      };
+      
+      let s: MediaStream;
+      try {
+        s = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (e) {
+        // Fallback jika kriteria ketat tidak didukung oleh perangkat tertentu
+        s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      }
+
       setStream(s);
       if (videoRef.current) {
         videoRef.current.srcObject = s;
@@ -291,7 +303,7 @@ const Studio: React.FC = () => {
                 ref={videoRef} 
                 autoPlay 
                 playsInline 
-                className={`w-full h-full object-cover ${isMirror ? 'scale-x-[-1]' : ''}`}
+                className={`w-full h-full transition-all duration-300 ${isFitMode ? 'object-contain bg-black' : 'object-cover'} ${isMirror ? 'scale-x-[-1]' : ''}`}
               />
               
               {/* Flash Overlay */}
@@ -348,6 +360,14 @@ const Studio: React.FC = () => {
               >
                 <Monitor size={14} />
                 Mirror
+              </button>
+              <button 
+                onClick={() => setIsFitMode(!isFitMode)}
+                title={isFitMode ? 'Tampilan Utuh (Sudut Pandang Luas)' : 'Tampilan Penuh (Crop Kotak)'}
+                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${isFitMode ? 'bg-primary text-white' : 'hover:bg-white/5'}`}
+              >
+                {isFitMode ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
+                {isFitMode ? 'Kamera Utuh (Jauh)' : 'Kamera Crop (Dekat)'}
               </button>
             </div>
 
