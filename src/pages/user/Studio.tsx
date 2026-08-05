@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Camera, RefreshCw, CheckCircle2, Timer, Monitor, Sparkles, Info, Image as ImageIcon, Maximize2, Minimize2 } from 'lucide-react';
+import { Camera, RefreshCw, CheckCircle2, Timer, Monitor, Sparkles, Info, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Session, normalizeDurationToSeconds } from '../../types';
 import { fetchSessionById } from '../../services/api';
@@ -15,7 +15,6 @@ const Studio: React.FC = () => {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isMirror, setIsMirror] = useState(true);
-  const [isFitMode, setIsFitMode] = useState(false);
   const [intervalTime, setIntervalTime] = useState<3 | 5>(3);
   const [timeLeft, setTimeLeft] = useState<number>(-1);
   const [isAutoCapturing, setIsAutoCapturing] = useState(false);
@@ -303,7 +302,7 @@ const Studio: React.FC = () => {
                 ref={videoRef} 
                 autoPlay 
                 playsInline 
-                className={`w-full h-full transition-all duration-300 ${isFitMode ? 'object-contain bg-black' : 'object-cover'} ${isMirror ? 'scale-x-[-1]' : ''}`}
+                className={`w-full h-full object-cover ${isMirror ? 'scale-x-[-1]' : ''}`}
               />
               
               {/* Flash Overlay */}
@@ -360,14 +359,6 @@ const Studio: React.FC = () => {
               >
                 <Monitor size={14} />
                 Mirror
-              </button>
-              <button 
-                onClick={() => setIsFitMode(!isFitMode)}
-                title={isFitMode ? 'Tampilan Utuh (Sudut Pandang Luas)' : 'Tampilan Penuh (Crop Kotak)'}
-                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${isFitMode ? 'bg-primary text-white' : 'hover:bg-white/5'}`}
-              >
-                {isFitMode ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
-                {isFitMode ? 'Kamera Utuh (Jauh)' : 'Kamera Crop (Dekat)'}
               </button>
             </div>
 
